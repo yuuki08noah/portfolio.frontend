@@ -55,7 +55,7 @@ export const useApi = () => {
     }
 
     if (body && method !== 'GET') {
-      fetchOptions.body = body
+      fetchOptions.body = JSON.stringify(body)
     }
 
     const finalEndpoint = getLocalizedEndpoint(endpoint, localized)

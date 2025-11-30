@@ -246,6 +246,114 @@
         <p v-if="!form.certifications.length" class="muted">{{ t.addCertPlaceholder }}</p>
       </div>
 
+      <!-- Awards - English -->
+      <div v-show="activeLang === 'en'" class="card">
+        <div class="card-header">
+          <h2>{{ t.awards }} (English)</h2>
+          <button type="button" class="btn ghost small" @click="addAward('en')">{{ t.addAward }}</button>
+        </div>
+        <div class="awards-list">
+          <div v-for="(award, index) in form.awards.en.filter(a => !a._destroy)" :key="index" class="award-item">
+            <div class="award-fields">
+              <div class="field">
+                <label :for="'award-name-' + index">{{ t.awardName }}</label>
+                <input :id="'award-name-' + index" v-model="award.name" type="text" placeholder="Best Innovation Award" />
+              </div>
+              <div class="field">
+                <label :for="'award-issuer-' + index">{{ t.awardIssuer }}</label>
+                <input :id="'award-issuer-' + index" v-model="award.issuer" type="text" placeholder="Tech Conference 2024" />
+              </div>
+              <div class="field">
+                <label :for="'award-date-' + index">{{ t.awardDate }}</label>
+                <input :id="'award-date-' + index" v-model="award.date" type="text" placeholder="2024-03" />
+              </div>
+              <div class="field">
+                <label :for="'award-url-' + index">{{ t.awardUrl }}</label>
+                <input :id="'award-url-' + index" v-model="award.url" type="text" placeholder="https://..." />
+              </div>
+              <div class="field full-width">
+                <label :for="'award-desc-' + index">{{ t.awardDescription }}</label>
+                <textarea :id="'award-desc-' + index" v-model="award.description" rows="2" placeholder="Award description..."></textarea>
+              </div>
+            </div>
+            <button type="button" class="btn-remove" @click="removeAward('en', index)">×</button>
+          </div>
+        </div>
+        <p v-if="!form.awards.en.filter(a => !a._destroy).length" class="muted">{{ t.addAwardPlaceholder }}</p>
+      </div>
+
+      <!-- Awards - Korean -->
+      <div v-show="activeLang === 'ko'" class="card">
+        <div class="card-header">
+          <h2>{{ t.awards }} (한국어)</h2>
+          <button type="button" class="btn ghost small" @click="addAward('ko')">{{ t.addAward }}</button>
+        </div>
+        <div class="awards-list">
+          <div v-for="(award, index) in form.awards.ko.filter(a => !a._destroy)" :key="index" class="award-item">
+            <div class="award-fields">
+              <div class="field">
+                <label :for="'award-name-ko-' + index">수상명</label>
+                <input :id="'award-name-ko-' + index" v-model="award.name" type="text" placeholder="최우수 혁신상" />
+              </div>
+              <div class="field">
+                <label :for="'award-issuer-ko-' + index">수여기관</label>
+                <input :id="'award-issuer-ko-' + index" v-model="award.issuer" type="text" placeholder="테크 컨퍼런스 2024" />
+              </div>
+              <div class="field">
+                <label :for="'award-date-ko-' + index">수상일</label>
+                <input :id="'award-date-ko-' + index" v-model="award.date" type="text" placeholder="2024-03" />
+              </div>
+              <div class="field">
+                <label :for="'award-url-ko-' + index">URL (선택)</label>
+                <input :id="'award-url-ko-' + index" v-model="award.url" type="text" placeholder="https://..." />
+              </div>
+              <div class="field full-width">
+                <label :for="'award-desc-ko-' + index">설명</label>
+                <textarea :id="'award-desc-ko-' + index" v-model="award.description" rows="2" placeholder="수상 설명..."></textarea>
+              </div>
+            </div>
+            <button type="button" class="btn-remove" @click="removeAward('ko', index)">×</button>
+          </div>
+        </div>
+        <p v-if="!form.awards.ko.filter(a => !a._destroy).length" class="muted">{{ t.addAwardPlaceholder }}</p>
+      </div>
+
+      <!-- Awards - Japanese -->
+      <div v-show="activeLang === 'ja'" class="card">
+        <div class="card-header">
+          <h2>{{ t.awards }} (日本語)</h2>
+          <button type="button" class="btn ghost small" @click="addAward('ja')">{{ t.addAward }}</button>
+        </div>
+        <div class="awards-list">
+          <div v-for="(award, index) in form.awards.ja.filter(a => !a._destroy)" :key="index" class="award-item">
+            <div class="award-fields">
+              <div class="field">
+                <label :for="'award-name-ja-' + index">賞名</label>
+                <input :id="'award-name-ja-' + index" v-model="award.name" type="text" placeholder="最優秀イノベーション賞" />
+              </div>
+              <div class="field">
+                <label :for="'award-issuer-ja-' + index">授与機関</label>
+                <input :id="'award-issuer-ja-' + index" v-model="award.issuer" type="text" placeholder="テックカンファレンス2024" />
+              </div>
+              <div class="field">
+                <label :for="'award-date-ja-' + index">受賞日</label>
+                <input :id="'award-date-ja-' + index" v-model="award.date" type="text" placeholder="2024-03" />
+              </div>
+              <div class="field">
+                <label :for="'award-url-ja-' + index">URL (任意)</label>
+                <input :id="'award-url-ja-' + index" v-model="award.url" type="text" placeholder="https://..." />
+              </div>
+              <div class="field full-width">
+                <label :for="'award-desc-ja-' + index">説明</label>
+                <textarea :id="'award-desc-ja-' + index" v-model="award.description" rows="2" placeholder="受賞説明..."></textarea>
+              </div>
+            </div>
+            <button type="button" class="btn-remove" @click="removeAward('ja', index)">×</button>
+          </div>
+        </div>
+        <p v-if="!form.awards.ja.filter(a => !a._destroy).length" class="muted">{{ t.addAwardPlaceholder }}</p>
+      </div>
+
       <!-- Submit -->
       <div class="form-actions">
         <button type="submit" class="btn btn-primary" :disabled="saving">
@@ -297,7 +405,15 @@ const i18n = {
     certName: 'Name',
     certIssuer: 'Issuer',
     certDate: 'Date',
-    certUrl: 'URL (Optional)'
+    certUrl: 'URL (Optional)',
+    awards: 'Awards',
+    addAward: '+ Add',
+    addAwardPlaceholder: 'Add your awards.',
+    awardName: 'Name',
+    awardIssuer: 'Issuer',
+    awardDate: 'Date',
+    awardUrl: 'URL (Optional)',
+    awardDescription: 'Description'
   },
   ko: {
     loading: '불러오는 중...',
@@ -327,7 +443,15 @@ const i18n = {
     certName: '자격증명',
     certIssuer: '발급기관',
     certDate: '취득일',
-    certUrl: 'URL (선택)'
+    certUrl: 'URL (선택)',
+    awards: '수상 내역',
+    addAward: '+ 추가',
+    addAwardPlaceholder: '수상 내역을 추가하세요.',
+    awardName: '수상명',
+    awardIssuer: '수여기관',
+    awardDate: '수상일',
+    awardUrl: 'URL (선택)',
+    awardDescription: '설명'
   },
   ja: {
     loading: '読み込み中...',
@@ -357,7 +481,15 @@ const i18n = {
     certName: '資格名',
     certIssuer: '発行機関',
     certDate: '取得日',
-    certUrl: 'URL (任意)'
+    certUrl: 'URL (任意)',
+    awards: '受賞歴',
+    addAward: '+ 追加',
+    addAwardPlaceholder: '受賞歴を追加してください。',
+    awardName: '賞名',
+    awardIssuer: '授与機関',
+    awardDate: '受賞日',
+    awardUrl: 'URL (任意)',
+    awardDescription: '説明'
   }
 }
 
@@ -400,6 +532,16 @@ interface Certification {
   url?: string
 }
 
+interface Award {
+  id?: number
+  name: string
+  issuer: string
+  date: string
+  url?: string
+  description?: string
+  _destroy?: boolean
+}
+
 interface ProfileForm {
   name: string
   tagline: string
@@ -415,6 +557,11 @@ interface ProfileForm {
   values: ProfileValue[]
   external_links: ExternalLink[]
   certifications: Certification[]
+  awards: {
+    en: Award[]
+    ko: Award[]
+    ja: Award[]
+  }
   translations: ProfileTranslations
 }
 
@@ -441,6 +588,11 @@ const form = reactive<ProfileForm>({
   values: [],
   external_links: [],
   certifications: [],
+  awards: {
+    en: [],
+    ko: [],
+    ja: []
+  },
   translations: {
     ko: {
       name: '',
@@ -465,14 +617,42 @@ const loadProfile = async () => {
   loading.value = true
   error.value = ''
   try {
-    const response = await get<{ profile: ProfileForm }>('/api/v1/portfolio/profile')
+    const response = await get<{ profile: any }>('/api/v1/portfolio/profile')
     if (response?.profile) {
+      const awards = response.profile.awards || []
+      
       Object.assign(form, {
         ...response.profile,
         skills: response.profile.skills || [],
         values: response.profile.values || [],
         external_links: response.profile.external_links || [],
         certifications: response.profile.certifications || [],
+        awards: {
+          en: awards.filter((a: any) => !a.translations?.ko?.title && !a.translations?.ja?.title).map((award: any) => ({
+            id: award.id,
+            name: award.name,
+            issuer: award.issuer,
+            date: award.date,
+            url: award.url,
+            description: award.description
+          })),
+          ko: awards.filter((a: any) => a.translations?.ko?.title).map((award: any) => ({
+            id: award.id,
+            name: award.translations.ko.title,
+            issuer: award.translations.ko.organization,
+            date: award.date,
+            url: award.url,
+            description: award.translations.ko.description
+          })),
+          ja: awards.filter((a: any) => a.translations?.ja?.title).map((award: any) => ({
+            id: award.id,
+            name: award.translations.ja.title,
+            issuer: award.translations.ja.organization,
+            date: award.date,
+            url: award.url,
+            description: award.translations.ja.description
+          }))
+        },
         translations: {
           ko: {
             name: response.profile.translations?.ko?.name || '',
@@ -505,8 +685,57 @@ const handleSubmit = async () => {
   successMessage.value = ''
   error.value = ''
   try {
-    await put('/api/v1/portfolio/profile', form)
+    const allAwards = [
+      ...form.awards.en.map(award => ({
+        id: award.id,
+        title: award.name,
+        organization: award.issuer,
+        date: award.date,
+        badge_image: award.url,
+        description: award.description,
+        _destroy: award._destroy
+      })),
+      ...form.awards.ko.map(award => ({
+        id: award.id,
+        title: award.name,
+        organization: award.issuer,
+        date: award.date,
+        badge_image: award.url,
+        description: award.description,
+        _destroy: award._destroy,
+        translations: {
+          ko: {
+            title: award.name,
+            organization: award.issuer,
+            description: award.description
+          }
+        }
+      })),
+      ...form.awards.ja.map(award => ({
+        id: award.id,
+        title: award.name,
+        organization: award.issuer,
+        date: award.date,
+        badge_image: award.url,
+        description: award.description,
+        _destroy: award._destroy,
+        translations: {
+          ja: {
+            title: award.name,
+            organization: award.issuer,
+            description: award.description
+          }
+        }
+      }))
+    ]
+
+    const payload = {
+      ...form,
+      awards_attributes: allAwards
+    }
+    await put('/api/v1/portfolio/profile', payload)
     successMessage.value = i18n[activeLang.value].savedSuccess
+    await loadProfile()
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : i18n[activeLang.value].saveError
   } finally {
@@ -548,6 +777,26 @@ const addCertification = () => {
 
 const removeCertification = (index: number) => {
   form.certifications.splice(index, 1)
+}
+
+// Awards
+const addAward = (lang: 'en' | 'ko' | 'ja') => {
+  form.awards[lang].push({
+    name: '',
+    issuer: '',
+    date: '',
+    url: '',
+    description: ''
+  })
+}
+
+const removeAward = (lang: 'en' | 'ko' | 'ja', index: number) => {
+  const award = form.awards[lang][index]
+  if (award.id) {
+    award._destroy = true
+  } else {
+    form.awards[lang].splice(index, 1)
+  }
 }
 
 onMounted(loadProfile)
@@ -934,6 +1183,35 @@ onMounted(loadProfile)
   .cert-item .field:nth-child(3),
   .cert-item .field:nth-child(4) {
     grid-column: span 1;
+  }
+}
+
+/* Awards */
+.awards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.award-item {
+  display: flex;
+  gap: 12px;
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 4px;
+  align-items: start;
+}
+
+.award-fields {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .award-fields {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -1,0 +1,245 @@
+/* Global Styles — NYTimes/Vogue Inspired Portfolio */
+
+/* ========== Import Fonts ========== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap');
+
+/* ========== CSS Reset & Base ========== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+/* ========== Editorial Design System ========== */
+:root {
+  /* Typography - Sharp & Elegant */
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  --font-heading: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+
+  /* Monochrome Palette - High Contrast */
+  --color-text: #000000;
+  --color-bg: #FFFFFF;
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+  
+  --color-border: #E0E0E0;
+  --color-border-dark: #000000;
+  
+  /* Accent is now Black for a sharp look */
+  --color-accent: #000000; 
+  
+  --color-muted: #666666;
+  --color-light-gray: #F9F9F9;
+  --color-medium-gray: #CCCCCC;
+
+  /* Semantic Colors - Muted/Professional */
+  --color-success: #1B5E20;
+  --color-warning: #BF360C;
+  --color-error: #B71C1C;
+  --color-info: #0D47A1;
+
+  /* Spacing - Editorial Grid */
+  --spacing-xs: 0.5rem;   /* 8px */
+  --spacing-sm: 0.75rem;  /* 12px */
+  --spacing-md: 1rem;     /* 16px */
+  --spacing-lg: 1.5rem;   /* 24px */
+  --spacing-xl: 2rem;     /* 32px */
+  --spacing-2xl: 3rem;    /* 48px */
+  --spacing-3xl: 5rem;    /* 80px */
+  --spacing-4xl: 8rem;    /* 128px */
+
+  /* Typography Scale - Dramatic Hierarchy */
+  --text-xs: 0.75rem;     /* 12px */
+  --text-sm: 0.875rem;    /* 14px */
+  --text-base: 1rem;      /* 16px */
+  --text-lg: 1.125rem;    /* 18px */
+  --text-xl: 1.375rem;    /* 22px */
+  --text-2xl: 1.75rem;    /* 28px */
+  --text-3xl: 2.5rem;     /* 40px */
+  --text-4xl: 3.5rem;     /* 56px */
+  --text-5xl: 4.5rem;     /* 72px */
+  --text-6xl: 6rem;       /* 96px */
+
+  /* Layout */
+  --max-width: 1400px;
+  --max-width-reading: 740px;
+
+  /* Border Radius - Sharp */
+  --radius-none: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+
+  /* Shadows - Minimal/None for Print feel */
+  --shadow-subtle: none;
+  --shadow-sm: none;
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.05);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 300ms ease;
+
+  /* Z-index */
+  --z-base: 1;
+  --z-nav: 1000;
+  --z-dropdown: 2000;
+  --z-modal: 3000;
+}
+
+/* ========== Typography - Editorial Style ========== */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: var(--spacing-md);
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  font-size: var(--text-6xl);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  margin-bottom: var(--spacing-xl);
+}
+
+h2 {
+  font-size: var(--text-4xl);
+  font-weight: 800;
+  border-bottom: 1px solid var(--color-black);
+  padding-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+h3 {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+}
+
+h4 {
+  font-size: var(--text-xl);
+  font-weight: 600;
+}
+
+p {
+  margin-bottom: var(--spacing-md);
+  font-size: var(--text-base);
+  line-height: 1.8;
+  color: var(--color-text);
+  max-width: 38em; /* Optimal reading width */
+}
+
+a {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  transition: all var(--transition-fast);
+}
+
+a:hover {
+  background-color: var(--color-black);
+  color: var(--color-white);
+  text-decoration: none;
+}
+
+/* ========== Layout Utilities ========== */
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: var(--spacing-2xl) var(--spacing-lg);
+}
+
+.container-wide {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: var(--spacing-2xl) var(--spacing-lg);
+}
+
+.container-narrow {
+  max-width: var(--max-width-reading);
+  margin: 0 auto;
+  padding: var(--spacing-2xl) var(--spacing-lg);
+}
+
+/* ========== Grid System - Editorial Layout ========== */
+.grid {
+  display: grid;
+  gap: var(--spacing-xl);
+}
+
+.grid-sidebar {
+  display: grid;
+  grid-template-columns: 240px 1fr 240px;
+  gap: var(--spacing-2xl);
+  align-items: start;
+  border-top: 1px solid var(--color-black);
+  padding-top: var(--spacing-xl);
+}
+
+/* ========== Dividers - Editorial Separators ========== */
+.divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: var(--spacing-xl) 0;
+  border: none;
+}
+
+.divider-thick {
+  height: 4px;
+  background: var(--color-black);
+  margin: var(--spacing-lg) 0;
+  border: none;
+}
+
+/* ========== Form Elements - Sharp ========== */
+input,
+textarea,
+select {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+  color: var(--color-text);
+  transition: all var(--transition-fast);
+  width: 100%;
+  border-radius: var(--radius-none); /* Sharp corners */
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--color-black);
+  box-shadow: none;
+}
+
+/* ========== Utility Classes ========== */
+.text-muted { color: var(--color-muted); }
+.text-small { font-size: var(--text-sm); }
+.text-uppercase { text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+
+.border-top { border-top: 1px solid var(--color-border); padding-top: var(--spacing-lg); }
+.border-bottom { border-bottom: 1px solid var(--color-border); padding-bottom: var(--spacing-lg); }
+
+/* ========== Responsive ========== */
+@media (max-width: 1024px) {
+  .grid-sidebar {
+    grid-template-columns: 1fr;
+  }
+}

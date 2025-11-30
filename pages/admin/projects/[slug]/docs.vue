@@ -182,7 +182,7 @@ const categories = [
   { value: 'technical', label: 'Technical' },
   { value: 'troubleshooting', label: 'Troubleshooting' },
   { value: 'devlog', label: 'Dev Log' },
-  { value: 'references', label: 'References' }
+  { value: 'reference', label: 'Reference' }
 ]
 
 const filteredDocs = computed(() => {

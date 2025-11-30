@@ -1,20 +1,18 @@
 <template>
-  <div class="admin-projects-page">
-    <div class="container">
-      <header class="page-header">
-        <h1 class="page-title">Project Management</h1>
-        <NuxtLink to="/admin/projects/new" class="btn-primary">
-          + New Project
-        </NuxtLink>
-      </header>
+  <AdminLayout title="Projects" subtitle="Manage your portfolio projects">
+    <template #actions>
+      <NuxtLink to="/admin/projects/new" class="btn-create">
+        + New Project
+      </NuxtLink>
+    </template>
 
-      <div v-if="loading" class="loading">Loading projects...</div>
-      <div v-else-if="error" class="error">{{ error }}</div>
-      <div v-else-if="projects.length === 0" class="empty">
-        <p>No projects yet.</p>
-        <NuxtLink to="/admin/projects/new" class="btn-primary">Create your first project</NuxtLink>
-      </div>
-      <div v-else class="projects-table-wrapper">
+    <div v-if="loading" class="loading">Loading projects...</div>
+    <div v-else-if="error" class="error">{{ error }}</div>
+    <div v-else-if="projects.length === 0" class="empty">
+      <p>No projects yet.</p>
+      <NuxtLink to="/admin/projects/new" class="btn-primary">Create your first project</NuxtLink>
+    </div>
+    <div v-else class="projects-table-wrapper">
         <table class="projects-table">
           <thead>
             <tr>
@@ -60,11 +58,11 @@
               </td>
             </tr>
           </tbody>
-        </table>
-      </div>
+      </table>
+    </div>
 
-      <!-- Delete Confirmation Modal -->
-      <div v-if="deleteTarget" class="modal-overlay" @click.self="deleteTarget = null">
+    <!-- Delete Confirmation Modal -->
+    <div v-if="deleteTarget" class="modal-overlay" @click.self="deleteTarget = null">
         <div class="modal">
           <h2>Delete Project</h2>
           <p>Are you sure you want to delete "{{ deleteTarget.title }}"?</p>
@@ -77,12 +75,12 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
+  </AdminLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import AdminLayout from '~/components/admin/AdminLayout.vue'
 import type { PortfolioProject } from '~/types/portfolio'
 
 definePageMeta({
@@ -151,32 +149,20 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.admin-projects-page {
-  min-height: 100vh;
-  padding: var(--spacing-2xl) 0;
-  background: var(--color-bg);
+.btn-create {
+  display: inline-block;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--color-text);
+  color: var(--color-white);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
 }
 
-.container {
-  max-width: var(--max-width);
-  margin: 0 auto;
-  padding: 0 var(--spacing-lg);
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-2xl);
-  padding-bottom: var(--spacing-lg);
-  border-bottom: 2px solid var(--color-text);
-}
-
-.page-title {
-  font-family: var(--font-heading);
-  font-size: 2.5rem;
-  font-weight: 900;
-  margin: 0;
+.btn-create:hover {
+  background: var(--color-accent);
 }
 
 .btn-primary {

@@ -45,11 +45,11 @@
         </footer>
       </div>
     </template>
+    <div v-else class="empty">No document found</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
 import type { ProjectBlogPost } from '~/types/portfolio'
 
 const route = useRoute()
@@ -60,16 +60,12 @@ const docSlug = computed(() => route.params.docSlug as string)
 const { fetchProjectDoc } = useProjects()
 const { renderMarkdown } = useMarkdown()
 
-const doc = ref<ProjectBlogPost | null>(null)
-const loading = ref(true)
-const error = ref<string | null>(null)
-
 const categories = [
   { value: 'overview', label: 'Overview' },
   { value: 'technical', label: 'Technical' },
   { value: 'troubleshooting', label: 'Troubleshooting' },
   { value: 'devlog', label: 'Dev Log' },
-  { value: 'references', label: 'References' }
+  { value: 'reference', label: 'Reference' }
 ]
 
 const getCategoryLabel = (cat: string) => {
@@ -84,31 +80,17 @@ const formatDate = (dateStr: string) => {
   })
 }
 
+const { data: doc, pending: loading, error } = await useAsyncData(
+  `project-doc-${projectSlug.value}-${category.value}-${docSlug.value}`,
+  async () => {
+    const response = await fetchProjectDoc(projectSlug.value, category.value, docSlug.value)
+    return response.doc
+  }
+)
+
 const renderedContent = computed(() => {
   if (!doc.value?.content) return ''
   return renderMarkdown(doc.value.content)
-})
-
-const loadDoc = async () => {
-  loading.value = true
-  error.value = null
-
-  try {
-    const response = await fetchProjectDoc(projectSlug.value, category.value, docSlug.value)
-    doc.value = response.doc
-  } catch (e: any) {
-    error.value = e.data?.message || 'Failed to load document'
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(() => {
-  loadDoc()
-})
-
-watch([projectSlug, category, docSlug], () => {
-  loadDoc()
 })
 </script>
 

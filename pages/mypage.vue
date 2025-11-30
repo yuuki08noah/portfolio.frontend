@@ -1,125 +1,219 @@
 <template>
-  <div class="mypage-container">
+  <div class="mypage-wrapper">
     <div class="container">
-      <div class="mypage-header">
-        <h1 class="page-title">My Page</h1>
-        <p class="page-subtitle">Manage your account and settings</p>
-      </div>
+      <!-- Editorial Header -->
+      <header class="editorial-header">
+        <div class="header-top">
+          <span class="date-display">{{ currentDate }}</span>
+          <h1 class="brand-title">MY DASHBOARD</h1>
+          <span class="edition-display">Personal Edition</span>
+        </div>
+        <div class="header-divider"></div>
+        <nav class="editorial-nav">
+          <button 
+            v-for="tab in tabs" 
+            :key="tab.id"
+            @click="activeTab = tab.id"
+            :class="['nav-item', { active: activeTab === tab.id }]"
+          >
+            {{ tab.label }}
+          </button>
+        </nav>
+        <div class="header-divider-double"></div>
+      </header>
 
-      <div class="dashboard-grid">
-        <!-- Profile Card -->
-        <div class="dashboard-card profile-card">
-          <div class="card-header">
-            <h2>Profile</h2>
-            <button class="edit-toggle-btn" @click="toggleEditMode">
-              {{ isEditing ? 'Cancel' : 'Edit' }}
-            </button>
-          </div>
-          <div class="card-body">
-            <!-- View Mode -->
-            <div class="user-info" v-if="!isEditing && user">
-              <div class="avatar-placeholder">{{ user.name?.charAt(0) || 'U' }}</div>
-              <div class="info-text">
-                <h3>{{ user.name || 'User' }}</h3>
-                <p>{{ user.email }}</p>
-                <p v-if="profile.job_position" class="job-position">{{ profile.job_position }}</p>
-                <span class="role-badge">{{ user.role || 'User' }}</span>
+      <div class="editorial-layout">
+        <!-- Sidebar Column -->
+        <aside class="sidebar-column">
+          <div class="profile-section">
+            <div class="avatar-frame">
+              <div class="avatar-img">
+                {{ user?.name?.charAt(0).toUpperCase() || 'U' }}
               </div>
             </div>
-
-            <!-- Edit Mode -->
-            <form v-if="isEditing" class="profile-form" @submit.prevent="handleSaveProfile">
-              <div class="form-grid">
-                <div class="field">
-                  <label for="edit-name">Name</label>
-                  <input id="edit-name" v-model="profileForm.name" type="text" required />
-                </div>
-                <div class="field">
-                  <label for="edit-job">Job Position</label>
-                  <input id="edit-job" v-model="profileForm.job_position" type="text" placeholder="Full Stack Developer" />
-                </div>
-                <div class="field">
-                  <label for="edit-tagline">Tagline</label>
-                  <input id="edit-tagline" v-model="profileForm.tagline" type="text" placeholder="Your professional tagline" />
-                </div>
-                <div class="field full-width">
-                  <label for="edit-bio">Bio</label>
-                  <textarea id="edit-bio" v-model="profileForm.bio" rows="3" placeholder="Tell us about yourself..."></textarea>
-                </div>
-                <div class="field">
-                  <label for="edit-country">Country</label>
-                  <input id="edit-country" v-model="profileForm.location_country" type="text" placeholder="Korea" />
-                </div>
-                <div class="field">
-                  <label for="edit-city">City</label>
-                  <input id="edit-city" v-model="profileForm.location_city" type="text" placeholder="Seoul" />
-                </div>
-                <div class="field">
-                  <label for="edit-phone">Phone</label>
-                  <input id="edit-phone" v-model="profileForm.phone" type="tel" placeholder="010-1234-5678" />
-                </div>
-                <div class="field">
-                  <label for="edit-github">GitHub URL</label>
-                  <input id="edit-github" v-model="profileForm.github_url" type="url" placeholder="https://github.com/username" />
-                </div>
-                <div class="field">
-                  <label for="edit-linkedin">LinkedIn URL</label>
-                  <input id="edit-linkedin" v-model="profileForm.linkedin_url" type="url" placeholder="https://linkedin.com/in/username" />
-                </div>
-                <div class="field">
-                  <label for="edit-website">Website URL</label>
-                  <input id="edit-website" v-model="profileForm.website_url" type="url" placeholder="https://example.com" />
-                </div>
+            <h2 class="profile-name">{{ user?.name || 'User' }}</h2>
+            <p class="profile-role">{{ user?.role || 'Contributor' }}</p>
+            <p class="profile-email">{{ user?.email }}</p>
+            
+            <div class="sidebar-divider"></div>
+            
+            <div class="profile-stats">
+              <div class="stat-row">
+                <span class="stat-label">Skills</span>
+                <span class="stat-value">{{ profile.skills?.length || 0 }}</span>
               </div>
-
-              <!-- Skills -->
-              <div class="skills-section">
-                <div class="section-header">
-                  <label>Skills</label>
-                  <button type="button" class="add-btn" @click="addSkill">+ Add</button>
-                </div>
-                <div class="tags-list">
-                  <div v-for="(skill, index) in profileForm.skills" :key="index" class="tag-item">
-                    <input v-model="profileForm.skills[index]" type="text" placeholder="Skill" />
-                    <button type="button" class="remove-btn" @click="removeSkill(index)">×</button>
-                  </div>
-                </div>
+              <div class="stat-row">
+                <span class="stat-label">Location</span>
+                <span class="stat-value">{{ profile.location_city || 'Unknown' }}</span>
               </div>
+            </div>
+          </div>
+        </aside>
 
-              <div class="form-actions">
-                <button type="submit" class="save-btn" :disabled="saving">
+        <!-- Main Content Column -->
+        <main class="main-column">
+          <div class="content-header">
+            <h2 class="section-title">
+              {{ activeTabLabel }}
+            </h2>
+            <div class="actions">
+              <button v-if="activeTab !== 'settings' && !isEditing" class="btn-text" @click="isEditing = true">
+                [ Edit Profile ]
+              </button>
+              <div v-else-if="isEditing" class="edit-controls">
+                <button class="btn-text" @click="cancelEdit">[ Cancel ]</button>
+                <button class="btn-solid" @click="handleSaveProfile" :disabled="saving">
                   {{ saving ? 'Saving...' : 'Save Changes' }}
                 </button>
               </div>
-              <p v-if="saveError" class="error-msg">{{ saveError }}</p>
-              <p v-if="saveSuccess" class="success-msg">{{ saveSuccess }}</p>
-            </form>
+            </div>
           </div>
-        </div>
 
-        <!-- Settings Card -->
-        <div class="dashboard-card">
-          <div class="card-header">
-            <h2>Settings</h2>
+          <div class="content-body">
+            <!-- Profile Tab -->
+            <div v-if="activeTab === 'profile'" class="article-content">
+              <form class="editorial-form" @submit.prevent="handleSaveProfile">
+                <div class="form-section">
+                  <h3 class="subsection-title">General Information</h3>
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label>Display Name</label>
+                      <input v-if="isEditing" v-model="profileForm.name" type="text" class="input-line" />
+                      <div v-else class="text-display">{{ profile.name || '—' }}</div>
+                    </div>
+                    <div class="form-group">
+                      <label>Position</label>
+                      <input v-if="isEditing" v-model="profileForm.job_position" type="text" class="input-line" />
+                      <div v-else class="text-display">{{ profile.job_position || '—' }}</div>
+                    </div>
+                  </div>
+                  <div class="form-group full">
+                    <label>Tagline</label>
+                    <input v-if="isEditing" v-model="profileForm.tagline" type="text" class="input-line" />
+                    <div v-else class="text-display italic">{{ profile.tagline || '—' }}</div>
+                  </div>
+                  <div class="form-group full">
+                    <label>Biography</label>
+                    <textarea v-if="isEditing" v-model="profileForm.bio" rows="6" class="input-area"></textarea>
+                    <div v-else class="text-display bio-content">{{ profile.bio || '—' }}</div>
+                  </div>
+                </div>
+
+                <div class="divider-dots"></div>
+
+                <div class="form-section">
+                  <h3 class="subsection-title">Contact Details</h3>
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label>Country</label>
+                      <input v-if="isEditing" v-model="profileForm.location_country" type="text" class="input-line" />
+                      <div v-else class="text-display">{{ profile.location_country || '—' }}</div>
+                    </div>
+                    <div class="form-group">
+                      <label>City</label>
+                      <input v-if="isEditing" v-model="profileForm.location_city" type="text" class="input-line" />
+                      <div v-else class="text-display">{{ profile.location_city || '—' }}</div>
+                    </div>
+                    <div class="form-group">
+                      <label>Phone</label>
+                      <input v-if="isEditing" v-model="profileForm.phone" type="tel" class="input-line" />
+                      <div v-else class="text-display">{{ profile.phone || '—' }}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="divider-dots"></div>
+
+                <div class="form-section">
+                  <h3 class="subsection-title">Digital Presence</h3>
+                  <div class="link-list">
+                    <div class="form-group">
+                      <label>GitHub</label>
+                      <input v-if="isEditing" v-model="profileForm.github_url" type="url" class="input-line" />
+                      <a v-else-if="profile.github_url" :href="profile.github_url" target="_blank" class="link-text">{{ profile.github_url }}</a>
+                      <div v-else class="text-display">—</div>
+                    </div>
+                    <div class="form-group">
+                      <label>LinkedIn</label>
+                      <input v-if="isEditing" v-model="profileForm.linkedin_url" type="url" class="input-line" />
+                      <a v-else-if="profile.linkedin_url" :href="profile.linkedin_url" target="_blank" class="link-text">{{ profile.linkedin_url }}</a>
+                      <div v-else class="text-display">—</div>
+                    </div>
+                    <div class="form-group">
+                      <label>Website</label>
+                      <input v-if="isEditing" v-model="profileForm.website_url" type="url" class="input-line" />
+                      <a v-else-if="profile.website_url" :href="profile.website_url" target="_blank" class="link-text">{{ profile.website_url }}</a>
+                      <div v-else class="text-display">—</div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Skills Tab -->
+            <div v-else-if="activeTab === 'skills'" class="article-content">
+              <div class="skills-wrapper">
+                <div class="skills-intro" v-if="isEditing">
+                  <p>Curate your professional expertise. Add skills to your portfolio.</p>
+                  <button type="button" class="btn-text-add" @click="addSkill">+ Add New Skill</button>
+                </div>
+
+                <div class="skills-list" :class="{ editing: isEditing }">
+                  <template v-if="isEditing">
+                    <div v-for="(skill, index) in profileForm.skills" :key="index" class="skill-edit-item">
+                      <input v-model="profileForm.skills[index]" type="text" class="input-line" placeholder="Skill..." />
+                      <button type="button" class="btn-remove" @click="removeSkill(index)">×</button>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <span v-for="(skill, index) in profile.skills" :key="index" class="skill-chip">
+                      {{ skill }}
+                    </span>
+                    <div v-if="profile.skills.length === 0" class="empty-text">No skills listed.</div>
+                  </template>
+                </div>
+              </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div v-else-if="activeTab === 'settings'" class="article-content">
+              <ul class="settings-menu">
+                <li class="setting-row">
+                  <div class="setting-desc">
+                    <h4>Security</h4>
+                    <p>Update your password and security preferences.</p>
+                  </div>
+                  <button class="btn-border">Update</button>
+                </li>
+                <li class="setting-row">
+                  <div class="setting-desc">
+                    <h4>Notifications</h4>
+                    <p>Manage email alerts and newsletters.</p>
+                  </div>
+                  <button class="btn-border">Manage</button>
+                </li>
+                <li class="setting-row danger">
+                  <div class="setting-desc">
+                    <h4>Danger Zone</h4>
+                    <p>Permanently delete your account and data.</p>
+                  </div>
+                  <button class="btn-border danger">Delete Account</button>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Messages -->
+            <div v-if="saveError" class="status-msg error">{{ saveError }}</div>
+            <div v-if="saveSuccess" class="status-msg success">{{ saveSuccess }}</div>
           </div>
-          <div class="card-body">
-            <ul class="settings-list">
-              <li>
-                <button class="setting-btn">Change Password</button>
-              </li>
-              <li>
-                <button class="setting-btn">Notification Preferences</button>
-              </li>
-            </ul>
-          </div>
-        </div>
+        </main>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useApi } from '~/composables/useApi'
 
 const { user } = useAuth()
@@ -143,10 +237,30 @@ interface ProfileData {
   skills: string[]
 }
 
+const tabs = [
+  { id: 'profile', label: 'Profile' },
+  { id: 'skills', label: 'Expertise' },
+  { id: 'settings', label: 'Settings' }
+]
+
+const activeTab = ref('profile')
 const isEditing = ref(false)
 const saving = ref(false)
 const saveError = ref('')
 const saveSuccess = ref('')
+
+const activeTabLabel = computed(() => {
+  return tabs.find(t => t.id === activeTab.value)?.label || 'Profile'
+})
+
+const currentDate = computed(() => {
+  return new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }).toUpperCase()
+})
 
 const profile = reactive<ProfileData>({
   name: '',
@@ -194,15 +308,12 @@ const loadProfile = async () => {
   }
 }
 
-const toggleEditMode = () => {
-  if (isEditing.value) {
-    // Reset form when canceling
-    Object.assign(profileForm, {
-      ...profile,
-      skills: [...profile.skills]
-    })
-  }
-  isEditing.value = !isEditing.value
+const cancelEdit = () => {
+  isEditing.value = false
+  Object.assign(profileForm, {
+    ...profile,
+    skills: [...profile.skills]
+  })
   saveError.value = ''
   saveSuccess.value = ''
 }
@@ -217,11 +328,11 @@ const handleSaveProfile = async () => {
       ...profileForm,
       skills: [...profileForm.skills]
     })
-    saveSuccess.value = 'Profile saved successfully!'
+    saveSuccess.value = 'Profile updated.'
     setTimeout(() => {
       isEditing.value = false
       saveSuccess.value = ''
-    }, 1500)
+    }, 2000)
   } catch (e: unknown) {
     saveError.value = e instanceof Error ? e.message : 'Failed to save profile'
   } finally {
@@ -241,307 +352,536 @@ onMounted(loadProfile)
 </script>
 
 <style scoped>
-.mypage-container {
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Inter:wght@400;500;600&display=swap');
+
+.mypage-wrapper {
   min-height: 100vh;
-  padding: var(--spacing-3xl) 0;
-  background: var(--color-bg);
+  background-color: #fff;
+  color: #111;
+  font-family: 'Merriweather', serif;
+  padding-bottom: 80px;
 }
 
 .container {
-  max-width: var(--max-width);
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0 var(--spacing-lg);
+  padding: 0 24px;
 }
 
-.mypage-header {
-  margin-bottom: var(--spacing-2xl);
-  border-bottom: 2px solid var(--color-text);
-  padding-bottom: var(--spacing-lg);
+/* Header */
+.editorial-header {
+  padding: 40px 0 0;
+  text-align: center;
+  margin-bottom: 40px;
 }
 
-.page-title {
-  font-family: var(--font-heading);
-  font-size: 3rem;
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #111;
+}
+
+.date-display, .edition-display {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #666;
+}
+
+.brand-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 3.5rem;
   font-weight: 900;
-  color: var(--color-text);
-  margin: 0 0 var(--spacing-sm);
+  margin: 0;
+  line-height: 1;
+  letter-spacing: -1px;
 }
 
-.page-subtitle {
-  font-size: var(--text-lg);
-  color: var(--color-muted);
-  font-style: italic;
+.header-divider {
+  height: 1px;
+  background: #111;
+  margin-bottom: 2px;
 }
 
-.dashboard-grid {
+.header-divider-double {
+  height: 3px;
+  background: #111;
+  border-top: 1px solid #fff;
+}
+
+.editorial-nav {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  padding: 12px 0;
+}
+
+.nav-item {
+  background: none;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #999;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.2s;
+}
+
+.nav-item:hover, .nav-item.active {
+  color: #111;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* Layout */
+.editorial-layout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--spacing-xl);
+  grid-template-columns: 280px 1fr;
+  gap: 40px;
+  border-top: 1px solid #111;
+  padding-top: 40px;
 }
 
-.dashboard-card {
-  background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+/* Sidebar */
+.sidebar-column {
+  border-right: 1px solid #e5e5e5;
+  padding-right: 40px;
 }
 
-.card-header {
-  padding: var(--spacing-md) var(--spacing-lg);
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-bg);
+.profile-section {
+  text-align: center;
+}
+
+.avatar-frame {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 24px;
+  border: 1px solid #111;
+  padding: 4px;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem;
+  color: #111;
+}
+
+.profile-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.profile-role {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #666;
+  margin: 0 0 4px;
+}
+
+.profile-email {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  color: #999;
+  margin: 0 0 24px;
+}
+
+.sidebar-divider {
+  width: 40px;
+  height: 1px;
+  background: #111;
+  margin: 0 auto 24px;
+}
+
+.profile-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stat-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
 }
 
-.card-header h2 {
-  font-size: var(--text-lg);
+.stat-label {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #666;
+}
+
+.stat-value {
+  font-weight: 600;
+  color: #111;
+}
+
+/* Main Content */
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 40px;
+  border-bottom: 4px solid #111;
+  padding-bottom: 16px;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.5rem;
   font-weight: 700;
   margin: 0;
+  font-style: italic;
 }
 
-.edit-toggle-btn {
-  padding: var(--spacing-xs) var(--spacing-md);
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+.btn-text {
+  background: none;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #111;
   cursor: pointer;
-  font-size: var(--text-sm);
+}
+
+.btn-text:hover {
+  text-decoration: underline;
+}
+
+.edit-controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.btn-solid {
+  background: #111;
+  color: #fff;
+  border: 1px solid #111;
+  padding: 8px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
   transition: all 0.2s;
 }
 
-.edit-toggle-btn:hover {
-  background: var(--color-text);
-  color: var(--color-white);
+.btn-solid:hover:not(:disabled) {
+  background: #fff;
+  color: #111;
 }
 
-.card-body {
-  padding: var(--spacing-lg);
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-lg);
-}
-
-.avatar-placeholder {
-  width: 64px;
-  height: 64px;
-  background: var(--color-text);
-  color: var(--color-white);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  font-weight: 700;
-}
-
-.info-text h3 {
-  margin: 0 0 var(--spacing-xs);
-  font-size: var(--text-xl);
-}
-
-.info-text p {
-  margin: 0 0 var(--spacing-xs);
-  color: var(--color-muted);
-}
-
-.job-position {
-  font-style: italic;
-}
-
-.role-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  font-weight: 600;
-}
-
-/* Profile Edit Form */
-.profile-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--spacing-md);
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.field.full-width {
-  grid-column: 1 / -1;
-}
-
-.field label {
-  font-weight: 600;
-  font-size: var(--text-sm);
-  color: var(--color-text);
-}
-
-.field input,
-.field textarea {
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-base);
-  font-family: inherit;
-}
-
-.field textarea {
-  resize: vertical;
-}
-
-/* Skills Section */
-.skills-section {
-  border-top: 1px solid var(--color-border);
-  padding-top: var(--spacing-md);
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-sm);
-}
-
-.section-header label {
-  font-weight: 600;
-  font-size: var(--text-sm);
-}
-
-.add-btn {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: var(--text-sm);
-}
-
-.add-btn:hover {
-  background: var(--color-bg);
-}
-
-.tags-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-sm);
-}
-
-.tag-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-}
-
-.tag-item input {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  width: 120px;
-}
-
-.remove-btn {
-  background: transparent;
-  border: 1px solid #f87171;
-  color: #dc2626;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 1rem;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.remove-btn:hover {
-  background: #fef2f2;
-}
-
-.form-actions {
-  display: flex;
-  gap: var(--spacing-md);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid var(--color-border);
-}
-
-.save-btn {
-  padding: var(--spacing-sm) var(--spacing-xl);
-  background: var(--color-text);
-  color: var(--color-white);
-  border: none;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-weight: 600;
-  transition: opacity 0.2s;
-}
-
-.save-btn:disabled {
+.btn-solid:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.save-btn:hover:not(:disabled) {
-  opacity: 0.9;
+/* Forms */
+.editorial-form {
+  max-width: 800px;
 }
 
-.error-msg {
-  color: #dc2626;
-  margin: 0;
-  font-size: var(--text-sm);
+.subsection-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 24px;
+  border-bottom: 1px solid #e5e5e5;
+  padding-bottom: 8px;
 }
 
-.success-msg {
-  color: #15803d;
-  margin: 0;
-  font-size: var(--text-sm);
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 32px;
+  margin-bottom: 32px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group.full {
+  grid-column: 1 / -1;
+  margin-bottom: 32px;
+}
+
+.form-group label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #666;
+}
+
+.input-line {
+  border: none;
+  border-bottom: 1px solid #ccc;
+  padding: 8px 0;
+  font-family: 'Merriweather', serif;
+  font-size: 1rem;
+  color: #111;
+  background: transparent;
+  transition: border-color 0.2s;
+  border-radius: 0;
+}
+
+.input-line:focus {
+  outline: none;
+  border-bottom-color: #111;
+}
+
+.input-area {
+  border: 1px solid #ccc;
+  padding: 16px;
+  font-family: 'Merriweather', serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  resize: vertical;
+  background: #f9f9f9;
+}
+
+.input-area:focus {
+  outline: none;
+  border-color: #111;
+  background: #fff;
+}
+
+.text-display {
+  padding: 8px 0;
+  font-size: 1.1rem;
+  color: #111;
+  border-bottom: 1px solid transparent;
+}
+
+.text-display.italic {
+  font-style: italic;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem;
+}
+
+.text-display.bio-content {
+  line-height: 1.8;
+  color: #333;
+}
+
+.link-text {
+  padding: 8px 0;
+  font-size: 1rem;
+  color: #111;
+  text-decoration: underline;
+  text-decoration-color: #ccc;
+  text-underline-offset: 4px;
+}
+
+.link-text:hover {
+  text-decoration-color: #111;
+}
+
+.divider-dots {
+  text-align: center;
+  margin: 40px 0;
+}
+
+.divider-dots::after {
+  content: '• • •';
+  font-size: 1.5rem;
+  color: #ccc;
+  letter-spacing: 8px;
+}
+
+/* Skills */
+.skills-intro {
+  text-align: center;
+  margin-bottom: 40px;
+  padding: 40px;
+  background: #f9f9f9;
+  border: 1px solid #e5e5e5;
+}
+
+.btn-text-add {
+  background: none;
+  border: 1px solid #111;
+  padding: 8px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: all 0.2s;
+}
+
+.btn-text-add:hover {
+  background: #111;
+  color: #fff;
+}
+
+.skills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.skills-list.editing {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.skill-chip {
+  padding: 8px 16px;
+  border: 1px solid #111;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.skill-edit-item {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-remove {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #999;
+}
+
+.btn-remove:hover {
+  color: #d00;
 }
 
 /* Settings */
-.settings-list {
+.settings-menu {
   list-style: none;
   padding: 0;
   margin: 0;
+  border-top: 1px solid #e5e5e5;
 }
 
-.setting-btn {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: var(--spacing-sm) 0;
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32px 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.setting-desc h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem;
+  margin: 0 0 8px;
+}
+
+.setting-desc p {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+}
+
+.btn-border {
   background: none;
-  border: none;
-  color: var(--color-text);
+  border: 1px solid #111;
+  padding: 8px 24px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   cursor: pointer;
-  font-size: var(--text-base);
-  border-bottom: 1px solid var(--color-border);
+  transition: all 0.2s;
 }
 
-.setting-btn:hover {
-  color: var(--color-accent);
+.btn-border:hover {
+  background: #111;
+  color: #fff;
 }
 
-@media (max-width: 768px) {
-  .form-grid {
+.btn-border.danger {
+  border-color: #d00;
+  color: #d00;
+}
+
+.btn-border.danger:hover {
+  background: #d00;
+  color: #fff;
+}
+
+/* Status Messages */
+.status-msg {
+  margin-top: 24px;
+  padding: 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  text-align: center;
+  border: 1px solid;
+}
+
+.status-msg.success {
+  border-color: #111;
+  background: #f0fdf4;
+}
+
+.status-msg.error {
+  border-color: #d00;
+  color: #d00;
+  background: #fff5f5;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .editorial-layout {
     grid-template-columns: 1fr;
+  }
+  
+  .sidebar-column {
+    border-right: none;
+    border-bottom: 1px solid #e5e5e5;
+    padding-right: 0;
+    padding-bottom: 40px;
+    margin-bottom: 40px;
+  }
+  
+  .header-top {
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  
+  .brand-title {
+    font-size: 2.5rem;
   }
 }
 </style>

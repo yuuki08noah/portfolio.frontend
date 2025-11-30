@@ -209,11 +209,11 @@ const loadProject = async () => {
     form.start_date = project.start_date || ''
     form.end_date = project.end_date || ''
     form.is_ongoing = project.is_ongoing || false
-    form.stack = project.stack || []
-    form.itinerary = project.itinerary || []
+    form.stack = Array.isArray(project.stack) ? project.stack : []
+    form.itinerary = Array.isArray(project.itinerary) ? project.itinerary : []
     form.demo_url = project.links?.demo || ''
     form.repo_url = project.links?.repo || ''
-    form.souvenirs = project.souvenirs || []
+    form.souvenirs = Array.isArray(project.souvenirs) ? project.souvenirs : []
   } catch (e: any) {
     loadError.value = e.data?.message || 'Failed to load project'
   } finally {
@@ -270,6 +270,7 @@ const isValidUrl = (url: string): boolean => {
 }
 
 const handleSubmit = async () => {
+  console.log('handleSubmit called')
   error.value = null
 
   if (!form.title.trim()) {
@@ -308,13 +309,14 @@ const handleSubmit = async () => {
   }
 
   submitting.value = true
+  console.log('Submitting to:', slug.value)
 
   try {
     const data = {
       title: form.title.trim(),
       description: form.description.trim(),
       stack: form.stack,
-      itinerary: form.itinerary.filter(i => i.trim()),
+      itinerary: Array.isArray(form.itinerary) ? form.itinerary.filter(i => i.trim()) : [],
       demo_url: form.demo_url.trim() || undefined,
       repo_url: form.repo_url.trim() || undefined,
       start_date: form.start_date || undefined,
@@ -323,9 +325,12 @@ const handleSubmit = async () => {
       souvenirs: form.souvenirs
     }
 
+    console.log('Sending data:', data)
     await updateProject(slug.value, data)
+    console.log('Update successful')
     router.push('/admin/projects')
   } catch (e: any) {
+    console.error('Update failed:', e)
     error.value = e.data?.error?.message || e.data?.message || 'Failed to update project'
   } finally {
     submitting.value = false

@@ -57,7 +57,7 @@ export interface HireRequest {
 export interface ProjectBlogPost {
   id: string
   projectId: string
-  category: 'overview' | 'troubleshooting' | 'technical' | 'devlog' | 'references'
+  category: 'overview' | 'troubleshooting' | 'technical' | 'devlog' | 'reference'
   title: string
   slug: string
   content: string
@@ -70,6 +70,6 @@ export interface ProjectBlogPost {
     views: number
     lastSyncedAt: string
   }
-  createdAt: string
-  updatedAt: string
+  created_at?: string
+  updated_at?: string
 }

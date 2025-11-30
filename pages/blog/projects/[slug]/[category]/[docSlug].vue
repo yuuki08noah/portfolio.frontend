@@ -13,7 +13,7 @@ import ProjectDocViewer from '~/components/blog/ProjectDocViewer.vue'
 import ProjectDocsSidebar from '~/components/blog/ProjectDocsSidebar.vue'
 
 const route = useRoute()
-const { fetchProjectDoc, fetchProjectDocs } = useProjectBlog()
+const { fetchProjectDoc, fetchProjectDocs } = useProjects()
 
 const slug = route.params.slug as string
 const category = route.params.category as string
@@ -21,31 +21,39 @@ const docSlug = route.params.docSlug as string
 
 const { data: doc } = await useAsyncData(
   `project-doc-${slug}-${category}-${docSlug}`,
-  () => fetchProjectDoc(slug, category, docSlug).then((res) => res.data)
+  () => fetchProjectDoc(slug, category, docSlug).then((res) => res.doc)
 )
 const { data: allDocs } = await useAsyncData(`project-${slug}-all-docs`, () =>
-  fetchProjectDocs(slug).then((res) => res.data)
+  fetchProjectDocs(slug).then((res) => res.docs)
 )
 </script>
 
 <style scoped>
 .project-doc-detail {
-  padding: var(--spacing-3xl) var(--spacing-md);
+  padding: 60px 24px 100px;
+  background: #fff;
+  min-height: 100vh;
 }
 
 .layout {
   display: grid;
   grid-template-columns: 280px 1fr;
-  gap: var(--spacing-lg);
+  gap: 60px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .empty {
-  color: var(--color-gray-600);
+  color: #666;
+  text-align: center;
+  padding: 100px 0;
+  font-family: 'Inter', sans-serif;
 }
 
 @media (max-width: 960px) {
   .layout {
     grid-template-columns: 1fr;
+    gap: 40px;
   }
 }
 </style>

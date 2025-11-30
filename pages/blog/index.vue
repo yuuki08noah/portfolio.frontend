@@ -30,6 +30,27 @@
 
         <!-- Post List -->
         <PostList :posts="posts || []" />
+
+        <!-- Project Docs Section -->
+        <section v-if="projects && projects.length > 0" class="project-docs-section">
+          <h2 class="section-title">Project Documents</h2>
+          <div class="projects-grid">
+            <NuxtLink
+              v-for="project in projects"
+              :key="project.id"
+              :to="`/blog/projects/${project.slug}`"
+              class="project-card"
+            >
+              <h3 class="project-title">{{ project.title }}</h3>
+              <p class="project-description">{{ project.description }}</p>
+              <div class="project-stack">
+                <span v-for="tech in project.stack?.slice(0, 3)" :key="tech" class="tech-tag">
+                  {{ tech }}
+                </span>
+              </div>
+            </NuxtLink>
+          </div>
+        </section>
       </div>
     </section>
   </div>
@@ -42,19 +63,27 @@ import TagCloud from '~/components/blog/TagCloud.vue'
 import PostList from '~/components/blog/PostList.vue'
 
 const { fetchPosts, fetchCategories, fetchTags } = useBlog()
+const { fetchProjects, fetchProjectDocs } = useProjects()
 const { isAdmin } = useAuth()
 
 const { data: posts } = await useAsyncData('blog-posts', async () => {
   const res = await fetchPosts()
   return res.data
 })
+
 const { data: categories } = await useAsyncData('blog-categories', async () => {
   const res = await fetchCategories()
   return res.data
 })
+
 const { data: tags } = await useAsyncData('blog-tags', async () => {
   const res = await fetchTags()
   return res.data
+})
+
+const { data: projects } = await useAsyncData('projects', async () => {
+  const res = await fetchProjects()
+  return res.projects || []
 })
 </script>
 
@@ -162,6 +191,84 @@ const { data: tags } = await useAsyncData('blog-tags', async () => {
   .filter-options {
     flex-direction: column;
     gap: 20px;
+  }
+}
+
+.project-docs-section {
+  margin-top: 80px;
+  padding-top: 80px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 40px;
+  letter-spacing: -1px;
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 32px;
+}
+
+.project-card {
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  padding: 32px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.project-card:hover {
+  border-color: #111;
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.project-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111;
+  margin: 0;
+}
+
+.project-description {
+  font-family: 'Merriweather', serif;
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.6;
+  margin: 0;
+  flex: 1;
+}
+
+.project-stack {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tech-tag {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  padding: 4px 12px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .projects-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

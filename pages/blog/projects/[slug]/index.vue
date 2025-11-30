@@ -24,11 +24,11 @@ import DocumentListItem from '~/components/blog/DocumentListItem.vue'
 import ProjectDocsSidebar from '~/components/blog/ProjectDocsSidebar.vue'
 
 const route = useRoute()
-const { fetchProjectDocs } = useProjectBlog()
+const { fetchProjectDocs } = useProjects()
 
 const slug = route.params.slug as string
 const { data: docs } = await useAsyncData(`project-docs-${slug}`, () =>
-  fetchProjectDocs(slug).then((res) => res.data)
+  fetchProjectDocs(slug).then((res) => res.docs)
 )
 </script>
 

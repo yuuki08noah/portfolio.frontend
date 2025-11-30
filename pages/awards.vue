@@ -7,7 +7,9 @@
 
       <div class="divider-line"></div>
 
-      <div class="awards-list">
+      <div v-if="loading" class="loading">Loading awards...</div>
+      <div v-else-if="awardsList.length === 0" class="empty">No awards yet.</div>
+      <div v-else class="awards-list">
         <article v-for="award in awardsList" :key="award.id" class="award-item">
           <div class="award-meta">
             <span class="award-date">{{ award.date }}</span>
@@ -25,9 +27,42 @@
 </template>
 
 <script setup lang="ts">
-import { awards } from '~/data/portfolio'
+import { ref, onMounted, watch } from 'vue'
+import useProfile from '~/composables/useProfile'
 
-const awardsList = awards
+interface Award {
+  id: number
+  title: string
+  organization: string
+  date: string
+  description?: string
+  badge_image?: string
+}
+
+const { fetchAwards } = useProfile()
+const route = useRoute()
+const awardsList = ref<Award[]>([])
+const loading = ref(true)
+
+const loadAwards = async () => {
+  loading.value = true
+  try {
+    const response = await fetchAwards()
+    awardsList.value = response.awards || []
+  } catch (e) {
+    console.error('Failed to load awards:', e)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadAwards()
+})
+
+watch(() => route.params.locale, () => {
+  loadAwards()
+})
 </script>
 
 <style scoped>
@@ -73,6 +108,14 @@ const awardsList = awards
   height: 1px;
   background-color: #e0e0e0;
   margin-bottom: 60px;
+}
+
+.loading, .empty {
+  text-align: center;
+  padding: 60px 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.1rem;
+  color: #999;
 }
 
 /* Awards List */

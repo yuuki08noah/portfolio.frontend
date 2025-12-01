@@ -178,7 +178,8 @@ import type { Category } from '~/types'
 
 definePageMeta({
   middleware: ['auth'],
-  layout: false
+  layout: false,
+  ssr: true
 })
 
 const router = useRouter()

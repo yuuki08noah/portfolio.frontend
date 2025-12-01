@@ -102,8 +102,40 @@ const onKeydown = (e: KeyboardEvent) => {
   }
 }
 
-const onPaste = (e: ClipboardEvent) => {
+const onPaste = async (e: ClipboardEvent) => {
   e.preventDefault()
+  
+  // Handle files
+  if (e.clipboardData?.files.length) {
+    const file = e.clipboardData.files[0]
+    if (file && file.type.startsWith('image/')) {
+      // Insert placeholder
+      document.execCommand('insertText', false, '![Uploading...]()')
+      
+      const { uploadImage } = useUpload()
+      const url = await uploadImage(file)
+      
+      if (url && element.value) {
+        // Replace placeholder with actual image markdown
+        // Note: This is a simple replacement, might need robust selection handling if user moved cursor
+        const text = element.value.innerText
+        const newText = text.replace('![Uploading...]()', `![Image](${url})`)
+        element.value.innerText = newText
+        emit('update:modelValue', newText)
+      } else {
+        // Handle error (remove placeholder)
+        const text = element.value?.innerText || ''
+        const newText = text.replace('![Uploading...]()', '[Upload Failed]')
+        if (element.value) {
+          element.value.innerText = newText
+          emit('update:modelValue', newText)
+        }
+      }
+      return
+    }
+  }
+
+  // Handle text
   const text = e.clipboardData?.getData('text/plain') || ''
   document.execCommand('insertText', false, text)
 }

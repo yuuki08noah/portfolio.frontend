@@ -700,12 +700,42 @@ const handleDragOver = (e: DragEvent) => {
 }
 
 // Handle drop on empty editor area
-const handleDrop = (e: DragEvent) => {
+const handleDrop = async (e: DragEvent) => {
   const target = e.target as HTMLElement
   
   // Only handle if dropped on editor-wrapper or blocks-list directly
   if (target === editorWrapper.value || target === blocksList.value) {
     e.preventDefault()
+    
+    // Handle files
+    if (e.dataTransfer?.files.length) {
+      const file = e.dataTransfer.files[0]
+      if (file && file.type.startsWith('image/')) {
+        const { uploadImage } = useUpload()
+        
+        // Create a temporary image block
+        const tempId = generateId()
+        blocks.value.push({
+          id: tempId,
+          type: 'image',
+          content: 'Uploading...'
+        })
+        
+        const url = await uploadImage(file)
+        
+        // Find the block and update it
+        const blockIndex = blocks.value.findIndex(b => b.id === tempId)
+        if (blockIndex !== -1) {
+          if (url) {
+            blocks.value[blockIndex].content = url
+          } else {
+            // Remove block if upload failed
+            blocks.value.splice(blockIndex, 1)
+          }
+        }
+        return
+      }
+    }
     
     const blockId = e.dataTransfer?.getData('text/plain')
     if (!blockId) return

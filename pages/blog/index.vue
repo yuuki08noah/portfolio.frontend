@@ -9,9 +9,6 @@
             <p class="page-subtitle">Thoughts, insights, and stories from my journey.</p>
           </div>
           <ClientOnly>
-            <NuxtLink v-if="isAdmin()" to="/blog/write" class="btn-write-post">
-              + Write Post
-            </NuxtLink>
           </ClientOnly>
         </div>
       </div>

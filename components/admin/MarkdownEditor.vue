@@ -205,7 +205,27 @@
             :index="index"
             @reorder="handleReorder"
           >
+            <!-- TOC Block Special Rendering -->
+            <div v-if="block.type === 'toc'" class="toc-block" contenteditable="false">
+              <div class="toc-header">Table of Contents</div>
+              <div class="toc-content">
+                <div v-if="getHeadings().length === 0" class="toc-empty">
+                  No headings found. Add H1-H3 to see them here.
+                </div>
+                <div 
+                  v-for="heading in getHeadings()" 
+                  :key="heading.id"
+                  class="toc-item"
+                  :class="`toc-${heading.type}`"
+                  @click="scrollToBlock(heading.id)"
+                >
+                  {{ heading.content || '(Empty Heading)' }}
+                </div>
+              </div>
+            </div>
+
             <ContentBlock
+              v-else
               v-model="block.content"
               :class="block.type"
               :placeholder="getPlaceholder(block.type)"
@@ -301,7 +321,7 @@ interface Block {
   id: string
   type: 'paragraph' | 'heading-1' | 'heading-2' | 'heading-3' | 'heading-4' | 'heading-5' | 'heading-6' | 
         'callout' | 'row' | 'column' | 'quote' | 'code' | 'bulleted-list' | 'numbered-list' | 
-        'todo' | 'divider' | 'image' | 'table'
+        'todo' | 'divider' | 'image' | 'table' | 'toc'
   content: string
   children?: Block[]
   width?: number // Percentage for columns
@@ -362,7 +382,8 @@ const commands: Command[] = [
   { label: 'Divider', desc: 'Horizontal line', icon: '—', type: 'divider' },
   // Media
   { label: 'Image', desc: 'Upload or embed image', icon: '🖼️', type: 'image' },
-  { label: 'Table', desc: 'Insert a table', icon: '▦', type: 'table' }
+  { label: 'Table', desc: 'Insert a table', icon: '▦', type: 'table' },
+  { label: 'Table of Contents', desc: 'Insert a table of contents', icon: '📑', type: 'toc' }
 ]
 
 const settings: Setting[] = [
@@ -859,7 +880,7 @@ const handleBackspace = (blockId: string, parentId?: string) => {
               const grandparentInfo = parentPath[parentPath.length - 2]
               const columnLayout = grandparentInfo.list[grandparentInfo.index]
               
-              if (columnLayout.type === 'column-layout' && columnLayout.children) {
+              if (columnLayout.type === 'row' && columnLayout.children) {
                 // Find other columns with content
                 const otherColumns = columnLayout.children.filter(col => 
                   col.id !== parentId && col.children && col.children.length > 0
@@ -1331,6 +1352,32 @@ const stopColumnResize = () => {
   document.body.style.cursor = ''
 }
 
+
+
+// --- TOC Helpers ---
+const getHeadings = () => {
+  const headings: Block[] = []
+  const traverse = (list: Block[]) => {
+    for (const block of list) {
+      if (['heading-1', 'heading-2', 'heading-3'].includes(block.type)) {
+        headings.push(block)
+      }
+      if (block.children) {
+        traverse(block.children)
+      }
+    }
+  }
+  traverse(blocks.value)
+  return headings
+}
+
+const scrollToBlock = (id: string) => {
+  const el = document.querySelector(`[data-block-id="${id}"]`)
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+}
+
 </script>
 
 <style scoped>
@@ -1652,4 +1699,50 @@ const stopColumnResize = () => {
 ::-webkit-scrollbar-thumb:hover {
   background: #ccc;
 }
+/* TOC Styles */
+.toc-block {
+  background: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 8px 0;
+}
+
+.toc-header {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #999;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.toc-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toc-empty {
+  color: #ccc;
+  font-style: italic;
+  font-size: 13px;
+}
+
+.toc-item {
+  cursor: pointer;
+  color: #555;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.toc-item:hover {
+  color: #111;
+  text-decoration: underline;
+}
+
+.toc-heading-1 { margin-left: 0; font-weight: 500; }
+.toc-heading-2 { margin-left: 16px; }
+.toc-heading-3 { margin-left: 32px; font-size: 13px; }
+
 </style>

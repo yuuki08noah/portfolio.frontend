@@ -299,12 +299,13 @@ const formatDate = (date: string) => {
   min-height: 100vh;
   color: #1a1a1a;
   font-family: 'Merriweather', serif;
-  padding: 60px 20px;
+  padding: var(--spacing-3xl) 0;
 }
 
 .portfolio-container {
-  max-width: 1100px;
+  max-width: var(--max-width);
   margin: 0 auto;
+  padding: 0 var(--spacing-xl);
 }
 
 .loading-state,
@@ -370,8 +371,8 @@ const formatDate = (date: string) => {
 /* Layout */
 .content-wrapper {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 80px;
+  grid-template-columns: 5fr 2fr;
+  gap: 50px;
   align-items: start;
 }
 
@@ -518,10 +519,11 @@ const formatDate = (date: string) => {
 /* Sidebar */
 .sidebar {
   padding-top: 10px;
+  flex-shrink: 0;
 }
 
 .photo-wrapper {
-  margin-bottom: 40px;
+  margin-bottom: 30px;
 }
 
 .profile-photo {

@@ -139,6 +139,10 @@
         </div>
         <div class="form-grid">
           <div class="field">
+            <label for="email">{{ t.email }}</label>
+            <input id="email" v-model="form.email" type="email" placeholder="email@example.com" />
+          </div>
+          <div class="field">
             <label for="phone">{{ t.phone }}</label>
             <input id="phone" v-model="form.phone" type="tel" placeholder="010-1234-5678" />
           </div>
@@ -386,6 +390,7 @@ const i18n = {
     loadError: 'Failed to load profile.',
     saveError: 'Failed to save.',
     contactLinks: 'Contact & Links',
+    email: 'Email',
     phone: 'Phone',
     websiteUrl: 'Website URL',
     skills: 'Skills',
@@ -424,6 +429,7 @@ const i18n = {
     loadError: '프로필을 불러오는데 실패했습니다.',
     saveError: '저장에 실패했습니다.',
     contactLinks: '연락처 및 링크',
+    email: '이메일',
     phone: '전화번호',
     websiteUrl: '웹사이트 URL',
     skills: '기술 스택',
@@ -462,6 +468,7 @@ const i18n = {
     loadError: 'プロフィールの読み込みに失敗しました。',
     saveError: '保存に失敗しました。',
     contactLinks: '連絡先・リンク',
+    email: 'メールアドレス',
     phone: '電話番号',
     websiteUrl: 'ウェブサイトURL',
     skills: 'スキル',
@@ -550,6 +557,7 @@ interface ProfileForm {
   job_position: string
   location_country: string
   location_city: string
+  email: string
   phone: string
   github_url: string
   linkedin_url: string
@@ -581,6 +589,7 @@ const form = reactive<ProfileForm>({
   job_position: '',
   location_country: '',
   location_city: '',
+  email: '',
   phone: '',
   github_url: '',
   linkedin_url: '',

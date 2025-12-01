@@ -27,7 +27,7 @@
     </div>
     <div v-else class="posts-list">
       <div v-for="post in filteredPosts" :key="post.id" class="post-item">
-        <div class="post-info">
+        <NuxtLink :to="`/admin/blog/${post.id}`" class="post-info">
           <h3 class="post-title">{{ post.title }}</h3>
           <p v-if="post.subtitle" class="post-subtitle">{{ post.subtitle }}</p>
           <div class="post-meta">
@@ -37,9 +37,9 @@
             </span>
             <span v-if="post.published_at" class="date">{{ formatDate(post.published_at) }}</span>
           </div>
-        </div>
+        </NuxtLink>
         <div class="post-actions">
-          <NuxtLink v-if="post.status === 'published'" :to="`/blog/${post.slug}`" class="btn-view" target="_blank">
+          <NuxtLink :to="`/admin/blog/${post.id}`" class="btn-view">
             View
           </NuxtLink>
           <NuxtLink :to="`/admin/blog/${post.id}/edit`" class="btn-edit">
@@ -74,7 +74,8 @@ import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '~/components/admin/AdminLayout.vue'
 
 definePageMeta({
-  middleware: ['admin']
+  middleware: ['admin'],
+  ssr: true
 })
 
 const { fetchBlogPosts, deleteBlogPost } = useBlogPosts()
@@ -253,6 +254,12 @@ onMounted(() => {
 
 .post-info {
   flex: 1;
+  text-decoration: none;
+  display: block;
+}
+
+.post-info:hover .post-title {
+  color: var(--color-accent);
 }
 
 .post-title {

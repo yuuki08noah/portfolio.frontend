@@ -20,7 +20,7 @@ const props = defineProps<{
   placeholder?: string
 }>()
 
-const emit = defineEmits(['update:modelValue', 'enter', 'backspace', 'arrow-up', 'arrow-down', 'slash', 'double-colon'])
+const emit = defineEmits(['update:modelValue', 'enter', 'backspace', 'arrow-up', 'arrow-down', 'slash'])
 
 const element = ref<HTMLElement | null>(null)
 const isLocked = ref(false)
@@ -43,15 +43,11 @@ const onInput = (e: Event) => {
   isLocked.value = true
   emit('update:modelValue', target.innerText)
   
-  if (typeof window !== 'undefined') {
-    const selection = window.getSelection()
-    if (selection && selection.rangeCount > 0) {
-      const text = target.innerText
-      if (text.endsWith('::')) {
-        emit('double-colon', e)
-      } else if (text.includes('/')) {
-        emit('slash', e)
-      }
+  const selection = window.getSelection()
+  if (selection && selection.rangeCount > 0) {
+    const text = target.innerText
+    if (text.includes('/')) {
+      emit('slash', e)
     }
   }
 
@@ -63,7 +59,30 @@ const onInput = (e: Event) => {
 const onKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault()
-    emit('enter', e)
+    
+    const target = e.target as HTMLElement
+    const selection = window.getSelection()
+    
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0)
+      const cursorOffset = range.startOffset
+      
+      // Get the text content
+      const fullText = target.innerText
+      
+      // Split at cursor position
+      const beforeCursor = fullText.substring(0, cursorOffset)
+      const afterCursor = fullText.substring(cursorOffset)
+      
+      // Update current block with text before cursor
+      target.innerText = beforeCursor
+      emit('update:modelValue', beforeCursor)
+      
+      // Emit enter with the text that should go to the new block
+      emit('enter', { afterText: afterCursor })
+    } else {
+      emit('enter', { afterText: '' })
+    }
     return
   }
   
@@ -86,9 +105,7 @@ const onKeydown = (e: KeyboardEvent) => {
 const onPaste = (e: ClipboardEvent) => {
   e.preventDefault()
   const text = e.clipboardData?.getData('text/plain') || ''
-  if (typeof document !== 'undefined') {
-    document.execCommand('insertText', false, text)
-  }
+  document.execCommand('insertText', false, text)
 }
 
 const onFocus = () => {
@@ -109,8 +126,6 @@ const onBlur = () => {
   padding: 3px 2px;
   border-radius: 3px;
   transition: background-color 0.15s ease;
-  width: 100%;
-  box-sizing: border-box;
 }
 
 .content-block-input:hover {

@@ -17,37 +17,80 @@
             </header>
             
             <div class="sections-list">
-              <article class="section-card">
-                <div class="card-image-wrapper">
-                  <img src="/images/profile-visual.png" alt="Profile" class="card-image" />
-                </div>
-                <div class="card-content">
-                  <div class="card-meta">
-                    <span class="card-category">Biography</span>
+              <!-- Loading Skeleton -->
+              <template v-if="loading">
+                <article class="section-card skeleton-card">
+                  <div class="card-image-wrapper">
+                    <div class="skeleton skeleton-image"></div>
                   </div>
-                  <h3><NuxtLink to="/profile">The Developer Profile</NuxtLink></h3>
-                  <p>An in-depth look at the background, skills, and professional philosophy that drives my work.</p>
-                </div>
-              </article>
+                  <div class="card-content">
+                    <div class="skeleton skeleton-category"></div>
+                    <div class="skeleton skeleton-title"></div>
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text short"></div>
+                  </div>
+                </article>
+                
+                <article class="section-card skeleton-card">
+                  <div class="card-image-wrapper">
+                    <div class="skeleton skeleton-image"></div>
+                  </div>
+                  <div class="card-content">
+                    <div class="skeleton skeleton-category"></div>
+                    <div class="skeleton skeleton-title"></div>
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text short"></div>
+                  </div>
+                </article>
+              </template>
               
-              <article class="section-card">
-                <div class="card-image-wrapper">
-                  <img src="/images/projects-visual.png" alt="Projects" class="card-image" />
-                </div>
-                <div class="card-content">
-                  <div class="card-meta">
-                    <span class="card-category">Portfolio</span>
+              <!-- Loaded Content -->
+              <template v-else>
+                <article class="section-card">
+                  <div class="card-image-wrapper">
+                    <img :src="profile?.avatar_url || '/images/profile-visual.png'" alt="Profile" class="card-image" />
                   </div>
-                  <h3><NuxtLink to="/projects">Projects</NuxtLink></h3>
-                  <p>Explore a curated collection of technical projects and achievements.</p>
-                </div>
-              </article>
+                  <div class="card-content">
+                    <div class="card-meta">
+                      <span class="card-category">Biography</span>
+                    </div>
+                    <h3><NuxtLink to="/profile">{{ profile?.name || 'The Developer Profile' }}</NuxtLink></h3>
+                    <p>{{ profile?.tagline || 'An in-depth look at the background, skills, and professional philosophy that drives my work.' }}</p>
+                  </div>
+                </article>
+                
+                <article v-if="featuredProject" class="section-card">
+                  <div class="card-image-wrapper">
+                    <img :src="featuredProject.thumbnail_url || '/images/projects-visual.png'" alt="Projects" class="card-image" />
+                  </div>
+                  <div class="card-content">
+                    <div class="card-meta">
+                      <span class="card-category">{{ featuredProject.category || 'Portfolio' }}</span>
+                    </div>
+                    <h3><NuxtLink :to="`/projects/${featuredProject.slug}`">{{ featuredProject.title }}</NuxtLink></h3>
+                    <p>{{ featuredProject.summary || featuredProject.description }}</p>
+                  </div>
+                </article>
+                
+                <article v-else class="section-card">
+                  <div class="card-image-wrapper">
+                    <img src="/images/projects-visual.png" alt="Projects" class="card-image" />
+                  </div>
+                  <div class="card-content">
+                    <div class="card-meta">
+                      <span class="card-category">Portfolio</span>
+                    </div>
+                    <h3><NuxtLink to="/projects">Projects</NuxtLink></h3>
+                    <p>Explore a curated collection of technical projects and achievements.</p>
+                  </div>
+                </article>
+              </template>
             </div>
           </div>
           
           <!-- Right Sidebar -->
           <aside class="sidebar-right">
-            <SidebarRight />
+            <SidebarRight :projects="recentProjects" :loading="loading" />
           </aside>
         </div>
       </div>
@@ -56,9 +99,62 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import HeroBanner from '~/components/HeroBanner.vue';
 import SidebarLeft from '~/components/SidebarLeft.vue'
 import SidebarRight from '~/components/SidebarRight.vue'
+import { useApi } from '~/composables/useApi'
+
+const { getLocalized } = useApi()
+
+interface Profile {
+  name: string
+  tagline: string
+  avatar_url: string
+}
+
+interface Project {
+  id: number
+  title: string
+  slug: string
+  summary?: string
+  description?: string
+  category?: string
+  thumbnail_url?: string
+  featured?: boolean
+}
+
+const loading = ref(true)
+const profile = ref<Profile | null>(null)
+const featuredProject = ref<Project | null>(null)
+const recentProjects = ref<Project[]>([])
+
+const loadData = async () => {
+  loading.value = true
+  try {
+    const [profileRes, projectsRes] = await Promise.all([
+      getLocalized<{ profile: Profile }>('/portfolio/profile', false),
+      getLocalized<{ projects: Project[] }>('/portfolio/projects', false)
+    ])
+    
+    if (profileRes?.profile) {
+      profile.value = profileRes.profile
+    }
+    
+    if (projectsRes?.projects) {
+      // Featured project (first featured or first project)
+      featuredProject.value = projectsRes.projects.find(p => p.featured) || projectsRes.projects[0] || null
+      // Recent projects for sidebar (top 3)
+      recentProjects.value = projectsRes.projects.slice(0, 3)
+    }
+  } catch (e) {
+    console.error('Failed to load data:', e)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(loadData)
 </script>
 
 <style scoped>
@@ -229,5 +325,49 @@ import SidebarRight from '~/components/SidebarRight.vue'
   .card-image-wrapper {
     height: 180px;
   }
+}
+
+/* Skeleton Loading Styles */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-image {
+  width: 100%;
+  height: 100%;
+}
+
+.skeleton-category {
+  width: 80px;
+  height: 14px;
+  margin-bottom: 8px;
+}
+
+.skeleton-title {
+  width: 70%;
+  height: 28px;
+  margin-bottom: 12px;
+}
+
+.skeleton-text {
+  width: 100%;
+  height: 16px;
+  margin-bottom: 8px;
+}
+
+.skeleton-text.short {
+  width: 60%;
 }
 </style>

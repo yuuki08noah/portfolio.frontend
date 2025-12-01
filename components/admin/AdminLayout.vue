@@ -60,9 +60,9 @@ const isActive = (path: string, exact = false) => {
 }
 
 .admin-container {
-  max-width: 1400px; /* Expanded width */
+  max-width: var(--max-width);
   margin: 0 auto;
-  padding: 80px 60px;
+  padding: 80px var(--spacing-xl);
 }
 
 .admin-header {
@@ -193,13 +193,13 @@ const isActive = (path: string, exact = false) => {
 
 @media (max-width: 1024px) {
   .admin-container {
-    padding: 60px 40px;
+    padding: 60px var(--spacing-lg);
   }
 }
 
 @media (max-width: 768px) {
   .admin-container {
-    padding: 40px 24px;
+    padding: 40px var(--spacing-lg);
   }
 
   .header-top {

@@ -2,6 +2,7 @@
 
 /* ========== Import Fonts ========== */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap');
+@import url('https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/nanumsquare.css');
 
 /* ========== CSS Reset & Base ========== */
 *,
@@ -28,8 +29,9 @@ body {
 /* ========== Editorial Design System ========== */
 :root {
   /* Typography - Sharp & Elegant */
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  --font-body: 'Helvetica', 'Helvetica Neue', 'NanumSquare', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-heading: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+  --font-korean: 'NanumSquare', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
 
   /* Monochrome Palette - High Contrast */
   --color-text: #000000;
@@ -152,9 +154,8 @@ a {
 }
 
 a:hover {
-  background-color: var(--color-black);
-  color: var(--color-white);
-  text-decoration: none;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
 }
 
 /* ========== Layout Utilities ========== */

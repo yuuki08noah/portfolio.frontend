@@ -1,182 +1,174 @@
 <template>
-  <div class="project-form-page">
-    <div class="container">
-      <header class="page-header">
-        <NuxtLink to="/admin/projects" class="back-link">← Back to Projects</NuxtLink>
-        <h1 class="page-title">Edit Project</h1>
+  <div class="project-edit-page">
+    <!-- Loading State -->
+    <div v-if="loading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading project...</p>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="loadError" class="error-container">
+      <p class="error-text">{{ loadError }}</p>
+      <NuxtLink to="/admin/projects" class="btn-back">← Back to Projects</NuxtLink>
+    </div>
+
+    <!-- Step 1: Basic Info -->
+    <div v-else-if="step === 1" class="step-one">
+      <div class="step-container">
+        <header class="step-header">
+          <NuxtLink to="/admin/projects" class="back-link">← Back to Projects</NuxtLink>
+          <h1 class="step-title">Edit Project</h1>
+          <p class="step-subtitle">Step 1 of 2: Basic Information</p>
+        </header>
+
+        <form @submit.prevent="saveBasicInfo" class="info-form">
+          <div v-if="error" class="error-message">{{ error }}</div>
+
+          <div class="form-grid">
+            <div class="form-field full-width">
+              <label for="title">Project Title *</label>
+              <input id="title" v-model="form.title" type="text" required maxlength="100" placeholder="Enter project title" />
+            </div>
+
+            <div class="form-field full-width">
+              <label for="description">Description *</label>
+              <textarea id="description" v-model="form.description" required maxlength="1000" rows="3" placeholder="Brief description shown on project card"></textarea>
+              <span class="char-count">{{ form.description.length }}/1000</span>
+            </div>
+
+            <div class="form-field full-width">
+              <label>Tech Stack *</label>
+              <div class="tags-input">
+                <div class="tags-list">
+                  <span v-for="(tech, idx) in form.stack" :key="idx" class="tag">
+                    {{ tech }}
+                    <button type="button" class="tag-remove" @click="removeStack(idx)">×</button>
+                  </span>
+                </div>
+                <input v-model="newStack" type="text" placeholder="Add technology and press Enter" @keydown.enter.prevent="addStack" />
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="start_date">Start Date</label>
+              <input id="start_date" v-model="form.start_date" type="date" />
+            </div>
+
+            <div class="form-field">
+              <label for="end_date">End Date</label>
+              <input id="end_date" v-model="form.end_date" type="date" :disabled="form.is_ongoing" />
+            </div>
+
+            <div class="form-field">
+              <label for="demo_url">Demo URL</label>
+              <input id="demo_url" v-model="form.demo_url" type="url" placeholder="https://demo.com" />
+            </div>
+
+            <div class="form-field">
+              <label for="repo_url">Repository URL</label>
+              <input id="repo_url" v-model="form.repo_url" type="url" placeholder="https://github.com/user/repo" />
+            </div>
+
+            <div class="form-field full-width checkbox-field">
+              <label class="checkbox-label">
+                <input type="checkbox" v-model="form.is_ongoing" />
+                <span>Currently ongoing (In Progress)</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <NuxtLink to="/admin/projects" class="btn-cancel">Cancel</NuxtLink>
+            <button type="submit" class="btn-save" :disabled="submitting">
+              {{ submitting ? 'Saving...' : 'Save Changes' }}
+            </button>
+            <button type="button" class="btn-next" @click="goToStep2">Next: Edit Content →</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Step 2: Editor -->
+    <div v-else class="step-two">
+      <header class="top-bar">
+        <div class="top-bar-inner">
+          <button type="button" class="back-btn" @click="step = 1">
+            <span class="back-icon">←</span>
+            <span class="back-text">Back to Info</span>
+          </button>
+
+          <div class="project-info">
+            <span class="project-title">{{ form.title }}</span>
+            <span class="step-indicator">Step 2 of 2</span>
+          </div>
+
+          <div class="top-bar-actions">
+            <button type="button" class="btn-draft" :class="{ saved: draftSaved }" :disabled="submitting" @click="saveDraft">
+              {{ draftSaved ? 'Saved!' : 'Save Draft' }}
+            </button>
+            <button type="button" class="btn-publish" :disabled="submitting" @click="handleSubmit">
+              {{ submitting ? 'Saving...' : 'Save Changes' }}
+            </button>
+          </div>
+        </div>
       </header>
 
-      <div v-if="loading" class="loading">Loading project...</div>
-      <div v-else-if="loadError" class="error">{{ loadError }}</div>
-      <form v-else class="project-form" @submit.prevent="handleSubmit">
-        <div v-if="error" class="error-message">{{ error }}</div>
+      <div class="editor-layout">
+        <div class="editor-pane">
+          <div class="editor-inner">
+            <h2 class="editor-heading">Project Overview</h2>
+            <div class="editor-divider"></div>
 
-        <!-- Basic Info -->
-        <section class="form-section">
-          <h2 class="section-title">Basic Information</h2>
-          
-          <div class="form-group">
-            <label for="title">Title *</label>
-            <input
-              id="title"
-              v-model="form.title"
-              type="text"
-              required
-              maxlength="100"
-              placeholder="Project title"
-            />
+            <!-- New Markdown Editor Component -->
+            <MarkdownEditor v-model="form.overview_content" />
           </div>
-
-          <div class="form-group">
-            <label for="description">Description *</label>
-            <textarea
-              id="description"
-              v-model="form.description"
-              required
-              maxlength="1000"
-              rows="4"
-              placeholder="Brief description of the project (shown on card)"
-            ></textarea>
-            <span class="char-count">{{ form.description.length }}/1000</span>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="start_date">Start Date</label>
-              <input
-                id="start_date"
-                v-model="form.start_date"
-                type="date"
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="end_date">End Date</label>
-              <input
-                id="end_date"
-                v-model="form.end_date"
-                type="date"
-                :disabled="form.is_ongoing"
-              />
-            </div>
-          </div>
-
-          <div class="form-group checkbox-group">
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                v-model="form.is_ongoing"
-              />
-              <span>Currently ongoing (In Progress)</span>
-            </label>
-          </div>
-        </section>
-
-        <!-- Tech Stack -->
-        <section class="form-section">
-          <h2 class="section-title">Tech Stack *</h2>
-          <div class="tags-input">
-            <div class="tags-list">
-              <span v-for="(tech, idx) in form.stack" :key="idx" class="tag">
-                {{ tech }}
-                <button type="button" class="tag-remove" @click="removeStack(idx)">×</button>
-              </span>
-            </div>
-            <input
-              v-model="newStack"
-              type="text"
-              placeholder="Add technology and press Enter"
-              @keydown.enter.prevent="addStack"
-            />
-          </div>
-        </section>
-
-        <!-- Features -->
-        <section class="form-section">
-          <h2 class="section-title">Key Features</h2>
-          <div class="list-input">
-            <div v-for="(item, idx) in form.itinerary" :key="idx" class="list-item">
-              <input
-                v-model="form.itinerary[idx]"
-                type="text"
-                placeholder="Feature description"
-              />
-              <button type="button" class="btn-remove" @click="removeItinerary(idx)">×</button>
-            </div>
-            <button type="button" class="btn-add" @click="addItinerary">+ Add Feature</button>
-          </div>
-        </section>
-
-        <!-- Links -->
-        <section class="form-section">
-          <h2 class="section-title">Links</h2>
-          
-          <div class="form-group">
-            <label for="demo_url">Demo URL</label>
-            <input
-              id="demo_url"
-              v-model="form.demo_url"
-              type="url"
-              placeholder="https://demo.example.com"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="repo_url">Repository URL</label>
-            <input
-              id="repo_url"
-              v-model="form.repo_url"
-              type="url"
-              placeholder="https://github.com/user/repo"
-            />
-          </div>
-        </section>
-
-        <!-- Images -->
-        <section class="form-section">
-          <h2 class="section-title">Screenshots</h2>
-          <div class="image-upload">
-            <div v-for="(img, idx) in form.souvenirs" :key="idx" class="image-preview">
-              <img :src="img" alt="Screenshot" />
-              <button type="button" class="btn-remove-img" @click="removeImage(idx)">×</button>
-            </div>
-            <label class="upload-btn">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                @change="handleImageUpload"
-              />
-              <span>+ Add Images</span>
-            </label>
-          </div>
-        </section>
-
-        <!-- Submit -->
-        <div class="form-actions">
-          <NuxtLink to="/admin/projects" class="btn-cancel">Cancel</NuxtLink>
-          <button type="submit" class="btn-submit" :disabled="submitting">
-            {{ submitting ? 'Saving...' : 'Save Changes' }}
-          </button>
         </div>
-      </form>
+
+        <div class="preview-pane">
+          <div class="preview-inner">
+            <article class="preview-article">
+              <h1 class="preview-title">{{ form.title }}</h1>
+              <p class="preview-description">{{ form.description }}</p>
+              <div class="preview-stack">
+                <span v-for="tech in form.stack" :key="tech" class="stack-tag">{{ tech }}</span>
+              </div>
+              <div class="preview-content">
+                <MarkdownRenderer :content="form.overview_content" />
+              </div>
+              <p v-if="!form.overview_content" class="preview-placeholder">Your project content will appear here...</p>
+            </article>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="error" class="error-toast">
+        {{ error }}
+        <button @click="error = null">×</button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { marked } from 'marked'
+import MarkdownEditor from '~/components/admin/MarkdownEditor.vue'
+import MarkdownRenderer from '~/components/blog/MarkdownRenderer.vue'
 
 definePageMeta({
-  middleware: ['admin']
+  middleware: ['admin'],
+  layout: false
 })
 
 const route = useRoute()
 const router = useRouter()
 const slug = computed(() => route.params.slug as string)
 
-const { fetchProject, updateProject } = useProjects()
+const { fetchProject, updateProject, fetchProjectDocs, updateProjectDoc } = useProjects()
 
+const step = ref(1)
+const loading = ref(true)
+const loadError = ref<string | null>(null)
 const form = reactive({
   title: '',
   description: '',
@@ -184,42 +176,123 @@ const form = reactive({
   end_date: '',
   is_ongoing: false,
   stack: [] as string[],
-  itinerary: [] as string[],
   demo_url: '',
   repo_url: '',
-  souvenirs: [] as string[]
+  overview_content: ''
 })
+const overviewDocId = ref<string | null>(null)
 
 const newStack = ref('')
-const loading = ref(true)
-const loadError = ref<string | null>(null)
 const error = ref<string | null>(null)
 const submitting = ref(false)
+const draftSaved = ref(false)
 
+const getDraftKey = () => `project_draft_edit_${slug.value}`
+
+const loadDraft = () => {
+  if (process.client) {
+    const saved = localStorage.getItem(getDraftKey())
+    if (saved) {
+      try {
+        const data = JSON.parse(saved)
+        form.title = data.title || ''
+        form.description = data.description || ''
+        form.start_date = data.start_date || ''
+        form.end_date = data.end_date || ''
+        form.is_ongoing = data.is_ongoing || false
+        form.stack = Array.isArray(data.stack) ? data.stack : []
+        form.demo_url = data.demo_url || ''
+        form.repo_url = data.repo_url || ''
+        form.overview_content = data.overview_content || ''
+        return true
+      } catch (e) {
+        console.error('Failed to load draft:', e)
+      }
+    }
+  }
+  return false
+}
+
+const clearDraft = () => {
+  if (process.client) {
+    localStorage.removeItem(getDraftKey())
+  }
+}
+
+// Load project data
 const loadProject = async () => {
   loading.value = true
   loadError.value = null
 
   try {
-    const response = await fetchProject(slug.value)
-    const project = response.project
-    
+    // Check if there's a draft first
+    if (process.client) {
+      const saved = localStorage.getItem(getDraftKey())
+      if (saved) {
+        const useDraft = confirm('You have unsaved changes. Do you want to restore them?')
+        if (useDraft) {
+          loadDraft()
+          loading.value = false
+          return
+        } else {
+          clearDraft()
+        }
+      }
+    }
+
+    const [projectResponse, docsResponse] = await Promise.all([
+      fetchProject(slug.value),
+      fetchProjectDocs(slug.value)
+    ])
+
+    const project = projectResponse.project
     form.title = project.title || ''
     form.description = project.description || ''
     form.start_date = project.start_date || ''
     form.end_date = project.end_date || ''
     form.is_ongoing = project.is_ongoing || false
     form.stack = Array.isArray(project.stack) ? project.stack : []
-    form.itinerary = Array.isArray(project.itinerary) ? project.itinerary : []
     form.demo_url = project.links?.demo || ''
     form.repo_url = project.links?.repo || ''
-    form.souvenirs = Array.isArray(project.souvenirs) ? project.souvenirs : []
+
+    // Load overview doc
+    const overviewDoc = docsResponse.docs?.find((d: any) => d.category === 'overview')
+    if (overviewDoc) {
+      form.overview_content = overviewDoc.content || ''
+      overviewDocId.value = overviewDoc.id
+    }
   } catch (e: any) {
     loadError.value = e.data?.message || 'Failed to load project'
   } finally {
     loading.value = false
   }
 }
+
+onMounted(() => {
+  loadProject()
+  if (step.value === 2 && typeof document !== 'undefined') {
+    document.body.style.overflow = 'hidden'
+  }
+})
+
+onUnmounted(() => {
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = ''
+  }
+})
+
+watch(step, (newStep) => {
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = newStep === 2 ? 'hidden' : ''
+  }
+  if (newStep === 2) {
+    nextTick(() => {
+      if (typeof window !== 'undefined') {
+        window.scrollTo(0, 0)
+      }
+    })
+  }
+})
 
 const addStack = () => {
   const tech = newStack.value.trim()
@@ -233,457 +306,661 @@ const removeStack = (idx: number) => {
   form.stack.splice(idx, 1)
 }
 
-const addItinerary = () => {
-  form.itinerary.push('')
-}
-
-const removeItinerary = (idx: number) => {
-  form.itinerary.splice(idx, 1)
-}
-
-const removeImage = (idx: number) => {
-  form.souvenirs.splice(idx, 1)
-}
-
-const handleImageUpload = async (e: Event) => {
-  const input = e.target as HTMLInputElement
-  if (!input.files?.length) return
-
-  for (const file of Array.from(input.files)) {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      form.souvenirs.push(e.target?.result as string)
-    }
-    reader.readAsDataURL(file)
-  }
-  input.value = ''
-}
-
-const isValidUrl = (url: string): boolean => {
-  if (!url) return true
-  try {
-    new URL(url)
-    return true
-  } catch {
-    return false
-  }
-}
-
-const handleSubmit = async () => {
-  console.log('handleSubmit called')
+const goToStep2 = () => {
   error.value = null
+  if (!form.title.trim()) { error.value = 'Title is required'; return }
+  if (!form.description.trim()) { error.value = 'Description is required'; return }
+  if (form.stack.length === 0) { error.value = 'At least one technology is required'; return }
+  step.value = 2
+}
 
-  if (!form.title.trim()) {
-    error.value = 'Title is required'
-    return
-  }
-  if (form.title.length > 100) {
-    error.value = 'Title must be 100 characters or less'
-    return
-  }
-  if (!form.description.trim()) {
-    error.value = 'Description is required'
-    return
-  }
-  if (form.description.length > 1000) {
-    error.value = 'Description must be 1000 characters or less'
-    return
-  }
-  if (form.stack.length === 0) {
-    error.value = 'At least one technology is required'
-    return
-  }
-  if (form.demo_url && !isValidUrl(form.demo_url)) {
-    error.value = 'Demo URL is not valid'
-    return
-  }
-  if (form.repo_url && !isValidUrl(form.repo_url)) {
-    error.value = 'Repository URL is not valid'
-    return
-  }
-  if (form.start_date && form.end_date && !form.is_ongoing) {
-    if (new Date(form.end_date) < new Date(form.start_date)) {
-      error.value = 'End date must be after start date'
-      return
+const saveDraft = () => {
+  if (process.client) {
+    const data = {
+      title: form.title,
+      description: form.description,
+      start_date: form.start_date,
+      end_date: form.end_date,
+      is_ongoing: form.is_ongoing,
+      stack: form.stack,
+      demo_url: form.demo_url,
+      repo_url: form.repo_url,
+      overview_content: form.overview_content,
+      savedAt: new Date().toISOString()
     }
+    localStorage.setItem(getDraftKey(), JSON.stringify(data))
+    draftSaved.value = true
+    setTimeout(() => { draftSaved.value = false }, 2000)
   }
+}
 
+// Save basic info only (Step 1)
+const saveBasicInfo = async () => {
+  error.value = null
   submitting.value = true
-  console.log('Submitting to:', slug.value)
 
   try {
     const data = {
       title: form.title.trim(),
       description: form.description.trim(),
       stack: form.stack,
-      itinerary: Array.isArray(form.itinerary) ? form.itinerary.filter(i => i.trim()) : [],
       demo_url: form.demo_url.trim() || undefined,
       repo_url: form.repo_url.trim() || undefined,
       start_date: form.start_date || undefined,
       end_date: form.is_ongoing ? undefined : (form.end_date || undefined),
-      is_ongoing: form.is_ongoing,
-      souvenirs: form.souvenirs
+      is_ongoing: form.is_ongoing
     }
 
-    console.log('Sending data:', data)
     await updateProject(slug.value, data)
-    console.log('Update successful')
-    router.push('/admin/projects')
+    error.value = null
+    alert('Basic information saved successfully!')
   } catch (e: any) {
-    console.error('Update failed:', e)
-    error.value = e.data?.error?.message || e.data?.message || 'Failed to update project'
+    error.value = e.data?.message || 'Failed to save project'
   } finally {
     submitting.value = false
   }
 }
 
-onMounted(() => {
-  loadProject()
-})
+// Save everything (Step 2)
+const handleSubmit = async () => {
+  error.value = null
+  submitting.value = true
+
+  try {
+    const data = {
+      title: form.title.trim(),
+      description: form.description.trim(),
+      stack: form.stack,
+      demo_url: form.demo_url.trim() || undefined,
+      repo_url: form.repo_url.trim() || undefined,
+      start_date: form.start_date || undefined,
+      end_date: form.is_ongoing ? undefined : (form.end_date || undefined),
+      is_ongoing: form.is_ongoing
+    }
+
+    await updateProject(slug.value, data)
+
+    // Update overview doc if exists
+    if (overviewDocId.value && form.overview_content.trim()) {
+      await updateProjectDoc(slug.value, 'overview', 'overview', {
+        content: form.overview_content.trim()
+      })
+    }
+
+    clearDraft()
+    router.push('/admin/projects')
+  } catch (e: any) {
+    error.value = e.data?.message || 'Failed to update project'
+  } finally {
+    submitting.value = false
+  }
+}
 </script>
 
 <style scoped>
-.project-form-page {
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.project-edit-page {
   min-height: 100vh;
-  padding: var(--spacing-2xl) 0;
-  background: var(--color-bg);
+  background: #fafafa;
 }
 
-.container {
+/* Loading & Error */
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 20px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f0f0f0;
+  border-top-color: #111;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-text {
+  color: #d32f2f;
+  font-size: 1rem;
+}
+
+.btn-back {
+  padding: 10px 20px;
+  background: #111;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.btn-back:hover {
+  opacity: 0.8;
+}
+
+/* Step 1: Info Form */
+.step-one {
+  padding: 40px 20px 80px;
+}
+
+.step-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 0 var(--spacing-lg);
+  background: #fff;
+  border-radius: 12px;
+  padding: 48px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-.page-header {
-  margin-bottom: var(--spacing-2xl);
+.step-header {
+  margin-bottom: 40px;
 }
 
 .back-link {
   display: inline-block;
-  margin-bottom: var(--spacing-md);
-  font-size: var(--text-sm);
-  color: var(--color-muted);
+  color: #666;
   text-decoration: none;
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+  transition: color 0.2s;
 }
 
 .back-link:hover {
-  color: var(--color-text);
+  color: #111;
 }
 
-.page-title {
-  font-family: var(--font-heading);
-  font-size: 2.5rem;
-  font-weight: 900;
+.step-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: #111;
+}
+
+.step-subtitle {
+  color: #666;
+  font-size: 0.95rem;
   margin: 0;
 }
 
-.loading, .error {
-  text-align: center;
-  padding: var(--spacing-3xl);
-  color: var(--color-muted);
-}
-
-.error {
-  color: #dc3545;
-}
-
-.project-form {
-  background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-xl);
+.info-form {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
 }
 
 .error-message {
-  padding: var(--spacing-md);
-  background: #ffebee;
-  border: 1px solid #ef9a9a;
-  border-radius: var(--radius-sm);
-  color: #c62828;
-  margin-bottom: var(--spacing-lg);
+  padding: 12px 16px;
+  background: #fee;
+  border-left: 3px solid #d32f2f;
+  color: #d32f2f;
+  border-radius: 4px;
+  font-size: 0.9rem;
 }
 
-.form-section {
-  margin-bottom: var(--spacing-xl);
-  padding-bottom: var(--spacing-xl);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.form-section:last-of-type {
-  border-bottom: none;
-}
-
-.section-title {
-  font-size: var(--text-lg);
-  font-weight: 700;
-  margin: 0 0 var(--spacing-lg);
-}
-
-.form-group {
-  margin-bottom: var(--spacing-lg);
-}
-
-.form-group label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: var(--spacing-xs);
-  font-size: var(--text-sm);
-}
-
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-base);
-  font-family: inherit;
-}
-
-.form-group input:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: var(--color-text);
-}
-
-.form-group input:disabled {
-  background: var(--color-bg);
-  color: var(--color-muted);
-  cursor: not-allowed;
-}
-
-.form-row {
+.form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-md);
+  gap: 24px;
 }
 
-.checkbox-group {
-  margin-top: var(--spacing-sm);
-}
-
-.checkbox-label {
+.form-field {
   display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  cursor: pointer;
-  font-weight: normal;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.checkbox-label input[type="checkbox"] {
-  width: auto;
-  cursor: pointer;
+.form-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-field label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.form-field input,
+.form-field textarea {
+  padding: 10px 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: 'Inter', sans-serif;
+  transition: border-color 0.2s;
+}
+
+.form-field input:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: #111;
 }
 
 .char-count {
-  display: block;
+  font-size: 0.8rem;
+  color: #999;
   text-align: right;
-  font-size: var(--text-xs);
-  color: var(--color-muted);
-  margin-top: var(--spacing-xs);
 }
 
 .tags-input {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fafafa;
 }
 
 .tags-list {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--spacing-xs);
-  margin-bottom: var(--spacing-sm);
+  gap: 8px;
 }
 
 .tag {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  padding: 4px 8px;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
+  gap: 6px;
+  padding: 6px 12px;
+  background: #111;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .tag-remove {
   background: none;
   border: none;
+  color: #fff;
   cursor: pointer;
-  padding: 0;
-  font-size: var(--text-lg);
+  font-size: 1.2rem;
   line-height: 1;
-  color: var(--color-muted);
+  padding: 0;
+  opacity: 0.8;
+  transition: opacity 0.2s;
 }
 
 .tag-remove:hover {
-  color: #c62828;
+  opacity: 1;
 }
 
 .tags-input input {
-  width: 100%;
-  padding: var(--spacing-sm);
   border: none;
+  background: none;
+  font-size: 0.9rem;
+  padding: 6px 0;
+}
+
+.tags-input input:focus {
   outline: none;
-  font-size: var(--text-base);
 }
 
-.list-input {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
+.checkbox-field {
+  padding-top: 10px;
 }
 
-.list-item {
-  display: flex;
-  gap: var(--spacing-sm);
-}
-
-.list-item input {
-  flex: 1;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-base);
-}
-
-.btn-remove {
-  padding: 0 var(--spacing-sm);
-  background: #ffebee;
-  border: 1px solid #ef9a9a;
-  border-radius: var(--radius-sm);
-  color: #c62828;
-  cursor: pointer;
-  font-size: var(--text-lg);
-}
-
-.btn-add {
-  padding: var(--spacing-sm);
-  background: var(--color-bg);
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: var(--text-sm);
-  color: var(--color-muted);
-}
-
-.btn-add:hover {
-  border-color: var(--color-text);
-  color: var(--color-text);
-}
-
-.image-upload {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: var(--spacing-md);
-}
-
-.image-preview {
-  position: relative;
-  aspect-ratio: 16/9;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-}
-
-.image-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.btn-remove-img {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 24px;
-  height: 24px;
-  background: rgba(0, 0, 0, 0.7);
-  border: none;
-  border-radius: 50%;
-  color: white;
-  cursor: pointer;
-  font-size: var(--text-base);
-}
-
-.upload-btn {
+.checkbox-label {
   display: flex;
   align-items: center;
-  justify-content: center;
-  aspect-ratio: 16/9;
-  border: 2px dashed var(--color-border);
-  border-radius: var(--radius-sm);
+  gap: 10px;
   cursor: pointer;
-  color: var(--color-muted);
-  transition: all var(--transition-fast);
+  font-weight: 500;
+  color: #333;
 }
 
-.upload-btn:hover {
-  border-color: var(--color-text);
-  color: var(--color-text);
-}
-
-.upload-btn input {
-  display: none;
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
 }
 
 .form-actions {
   display: flex;
-  gap: var(--spacing-md);
+  gap: 12px;
   justify-content: flex-end;
-  margin-top: var(--spacing-xl);
-  padding-top: var(--spacing-xl);
-  border-top: 1px solid var(--color-border);
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.btn-cancel,
+.btn-save,
+.btn-next {
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  border: none;
 }
 
 .btn-cancel {
-  padding: var(--spacing-sm) var(--spacing-xl);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  text-decoration: none;
-  color: var(--color-text);
-  font-weight: 600;
+  background: #f5f5f5;
+  color: #666;
 }
 
-.btn-submit {
-  padding: var(--spacing-sm) var(--spacing-xl);
-  background: var(--color-text);
-  border: none;
-  border-radius: var(--radius-sm);
-  color: var(--color-white);
-  font-weight: 700;
-  cursor: pointer;
-  transition: all var(--transition-fast);
+.btn-cancel:hover {
+  background: #eee;
+  color: #333;
 }
 
-.btn-submit:hover:not(:disabled) {
-  background: var(--color-accent);
+.btn-save {
+  background: #4caf50;
+  color: #fff;
 }
 
-.btn-submit:disabled {
-  opacity: 0.6;
+.btn-save:hover:not(:disabled) {
+  background: #45a049;
+}
+
+.btn-next {
+  background: #111;
+  color: #fff;
+}
+
+.btn-next:hover {
+  background: #333;
+}
+
+.btn-save:disabled,
+.btn-next:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-@media (max-width: 768px) {
-  .page-title {
-    font-size: 2rem;
+/* Step 2: Editor */
+.step-two {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #faf9f6;
+}
+
+.top-bar {
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.top-bar-inner {
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0 80px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  background: transparent;
+  border: none;
+  color: #666;
+  font-family: 'Georgia', serif;
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.back-btn:hover {
+  color: #111;
+}
+
+.back-icon {
+  font-size: 16px;
+}
+
+.project-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.project-title {
+  font-family: 'Georgia', serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+}
+
+.step-indicator {
+  font-family: 'Georgia', serif;
+  font-size: 12px;
+  color: #999;
+}
+
+.top-bar-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-draft {
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid #ccc;
+  color: #333;
+  font-family: 'Georgia', serif;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-draft:hover:not(:disabled) {
+  border-color: #111;
+  color: #111;
+}
+
+.btn-draft.saved {
+  background: #4caf50;
+  border-color: #4caf50;
+  color: #fff;
+}
+
+.btn-publish {
+  padding: 10px 24px;
+  background: #111;
+  border: 1px solid #111;
+  color: #fff;
+  font-family: 'Georgia', serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-publish:hover:not(:disabled) {
+  background: #333;
+}
+
+.btn-draft:disabled,
+.btn-publish:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.editor-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  margin: 0 80px;
+}
+
+.editor-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: #fff;
+  border-right: 1px solid #e0e0e0;
+}
+
+.preview-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: #fff;
+}
+
+.editor-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 32px 40px;
+  overflow-y: auto;
+}
+
+.preview-inner {
+  flex: 1;
+  min-height: 0;
+  padding: 32px 40px;
+  overflow-y: auto;
+}
+
+.editor-heading {
+  font-family: 'Playfair Display', 'Georgia', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 16px;
+}
+
+.editor-divider {
+  width: 60px;
+  height: 3px;
+  background: #111;
+  margin-bottom: 24px;
+}
+
+.preview-article {
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.preview-title {
+  font-family: 'Playfair Display', 'Georgia', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111;
+  line-height: 1.2;
+  margin: 0 0 16px;
+}
+
+.preview-description {
+  font-family: 'Georgia', serif;
+  font-size: 18px;
+  color: #666;
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+
+.preview-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.stack-tag {
+  padding: 4px 12px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  color: #333;
+}
+
+.preview-placeholder {
+  color: #999;
+  font-style: italic;
+  text-align: center;
+  padding: 60px 20px;
+  font-family: 'Georgia', serif;
+}
+
+.error-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #d32f2f;
+  color: #fff;
+  padding: 16px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 400px;
+  font-family: 'Georgia', serif;
+}
+
+.error-toast button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+@media (max-width: 1200px) {
+  .editor-layout {
+    grid-template-columns: 1fr;
+    margin: 0 20px;
   }
 
-  .project-form {
-    padding: var(--spacing-lg);
+  .preview-pane {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .step-container {
+    padding: 32px 24px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
   }
 
   .form-actions {
     flex-direction: column;
   }
 
-  .btn-cancel, .btn-submit {
+  .btn-cancel,
+  .btn-save,
+  .btn-next {
     width: 100%;
-    text-align: center;
+  }
+
+  .top-bar-inner {
+    padding: 0 20px;
   }
 }
 </style>

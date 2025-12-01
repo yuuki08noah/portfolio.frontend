@@ -1,34 +1,127 @@
+import { marked } from 'marked'
+
 export const useMarkdown = () => {
+  // Configure marked options
+  marked.setOptions({
+    breaks: true,
+    gfm: true
+  })
+
   const renderMarkdown = (markdown: string): string => {
-    const escapeHtml = (str: string) =>
-      str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
+    if (!markdown) return ''
 
-    let html = escapeHtml(markdown)
+    // For content with layout HTML (from our editor), preserve HTML and process markdown
+    if (markdown.includes('layout-row') || markdown.includes('layout-col') || markdown.includes('layout-grid-2') || markdown.includes('callout')) {
+      // Process the content but preserve HTML tags
+      let html = markdown
 
-    html = html.replace(/^### (.*)$/gim, '<h3>$1</h3>')
-    html = html.replace(/^## (.*)$/gim, '<h2>$1</h2>')
-    html = html.replace(/^# (.*)$/gim, '<h1>$1</h1>')
-    html = html.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
-    html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>')
-    html = html.replace(/`(.*?)`/gim, '<code>$1</code>')
-    html = html.replace(/\n\-(.*)/gim, '<ul><li>$1</li></ul>')
-    html = html.replace(/\n\d\.(.*)/gim, '<ol><li>$1</li></ol>')
-    html = html.replace(/\n{2,}/g, '</p><p>')
+      // Process markdown inside text blocks (not inside HTML tags)
+      // Split by HTML tags and process text parts only
+      const parts = html.split(/(<[^>]+>)/g)
+      html = parts.map(part => {
+        // If it's an HTML tag, keep it as-is
+        if (part.startsWith('<')) return part
+        // Otherwise, process as markdown
+        return processInlineMarkdown(part)
+      }).join('')
 
-    return `<p>${html}</p>`
+      return html
+    }
+
+    // Use marked for full markdown processing
+    try {
+      return marked.parse(markdown) as string
+    } catch (e) {
+      console.error('Markdown parsing error:', e)
+      return markdown
+    }
   }
 
+  // Process inline markdown elements only (for mixed HTML/markdown content)
+  const processInlineMarkdown = (text: string): string => {
+    if (!text.trim()) return text
+
+    let html = text
+
+    // Headings
+    html = html.replace(/^######\s+(.*)$/gm, '<h6>$1</h6>')
+    html = html.replace(/^#####\s+(.*)$/gm, '<h5>$1</h5>')
+    html = html.replace(/^####\s+(.*)$/gm, '<h4>$1</h4>')
+    html = html.replace(/^###\s+(.*)$/gm, '<h3>$1</h3>')
+    html = html.replace(/^##\s+(.*)$/gm, '<h2>$1</h2>')
+    html = html.replace(/^#\s+(.*)$/gm, '<h1>$1</h1>')
+
+    // Code blocks
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      return `<pre><code class="language-${lang || 'plaintext'}">${escapeHtml(code.trim())}</code></pre>`
+    })
+
+    // Inline code
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>')
+
+    // Bold & Italic
+    html = html.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>')
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    html = html.replace(/~~([^~]+)~~/g, '<del>$1</del>')
+
+    // Links & Images
+    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" />')
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+
+    // Horizontal rule
+    html = html.replace(/^---$/gm, '<hr />')
+    html = html.replace(/^\*\*\*$/gm, '<hr />')
+
+    // Blockquotes
+    html = html.replace(/^>\s+(.*)$/gm, '<blockquote>$1</blockquote>')
+
+    // Lists
+    html = html.replace(/^-\s+\[x\]\s+(.*)$/gm, '<li class="task-done"><input type="checkbox" checked disabled /> $1</li>')
+    html = html.replace(/^-\s+\[\s?\]\s+(.*)$/gm, '<li class="task"><input type="checkbox" disabled /> $1</li>')
+    html = html.replace(/^-\s+(.*)$/gm, '<li>$1</li>')
+    html = html.replace(/^(\d+)\.\s+(.*)$/gm, '<li>$2</li>')
+
+    // Wrap consecutive <li> in <ul> or <ol>
+    html = html.replace(/(<li(?:\s+class="task(?:-done)?")?>.*?<\/li>\n?)+/g, (match) => {
+      if (match.includes('class="task')) {
+        return `<ul class="task-list">${match}</ul>`
+      }
+      return `<ul>${match}</ul>`
+    })
+
+    // Tables (basic support)
+    html = html.replace(/\|(.+)\|\n\|[-:| ]+\|\n((?:\|.+\|\n?)+)/g, (_, header, body) => {
+      const headers = header.split('|').filter((s: string) => s.trim()).map((s: string) => `<th>${s.trim()}</th>`).join('')
+      const rows = body.trim().split('\n').map((row: string) => {
+        const cells = row.split('|').filter((s: string) => s.trim()).map((s: string) => `<td>${s.trim()}</td>`).join('')
+        return `<tr>${cells}</tr>`
+      }).join('')
+      return `<table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`
+    })
+
+    // Line breaks (double space or single newline in paragraphs)
+    html = html.replace(/\n\n/g, '</p><p>')
+
+    return html
+  }
+
+  const escapeHtml = (str: string) =>
+    str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+
   const extractToc = (markdown: string) => {
-    const headingRegex = /^#{1,6}\s+(.+)$/gm
+    const headingRegex = /^(#{1,6})\s+(.+)$/gm
     const toc: Array<{ level: number; text: string; id: string }> = []
     let match
 
     while ((match = headingRegex.exec(markdown)) !== null) {
-      const level = match[0].indexOf(' ')
-      const text = match[1]
+      const level = match[1].length
+      const text = match[2]
       const id = text
         .toLowerCase()
         .replace(/[^\w\s-]/g, '')

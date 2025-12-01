@@ -6,6 +6,7 @@
           <h1 class="admin-title">Admin Dashboard</h1>
           <nav class="admin-nav">
             <NuxtLink to="/admin" :class="['nav-link', { active: isActive('/admin', true) }]">Projects</NuxtLink>
+            <NuxtLink to="/admin/blog" :class="['nav-link', { active: isActive('/admin/blog') }]">Blog</NuxtLink>
             <NuxtLink to="/admin/profile" :class="['nav-link', { active: isActive('/admin/profile') }]">Profile</NuxtLink>
             <NuxtLink to="/admin/books" :class="['nav-link', { active: isActive('/admin/books') }]">Books</NuxtLink>
             <NuxtLink to="/admin/travel" :class="['nav-link', { active: isActive('/admin/travel') }]">Travel</NuxtLink>

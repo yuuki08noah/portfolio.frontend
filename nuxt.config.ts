@@ -8,7 +8,7 @@ export default defineNuxtConfig({
     '~/server': fileURLToPath(new URL('./server', import.meta.url))
   },
   pages: true,
-  ssr: false,
+  ssr: true,
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 

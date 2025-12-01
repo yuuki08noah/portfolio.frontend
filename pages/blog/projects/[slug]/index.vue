@@ -1,75 +1,61 @@
 <template>
-  <section class="project-docs container" v-if="docs">
-    <header class="page-header">
-      <p class="eyebrow">Project Docs</p>
-      <h1>{{ slug }}</h1>
-      <p class="subtitle">Overview, troubleshooting, technical notes, devlogs, references.</p>
-    </header>
-
+  <section v-if="firstDoc" class="project-doc-detail container">
     <div class="layout">
-      <ProjectDocsSidebar :project-slug="slug" :docs="docs" />
-      <div class="card doc-list">
-        <h2>All Documents</h2>
-        <div class="grid grid-2">
-          <DocumentListItem v-for="doc in docs" :key="doc.id" :doc="doc" />
-        </div>
-      </div>
+      <ProjectDocViewer :project-slug="slug" :doc="firstDoc" />
+      <ProjectDocsSidebar :project-slug="slug" :docs="docs || []" />
     </div>
   </section>
-  <p v-else class="empty container">No documents yet.</p>
+  <p v-else class="empty container">No documents found for this project.</p>
 </template>
 
 <script setup lang="ts">
-import DocumentListItem from '~/components/blog/DocumentListItem.vue'
+import ProjectDocViewer from '~/components/blog/ProjectDocViewer.vue'
 import ProjectDocsSidebar from '~/components/blog/ProjectDocsSidebar.vue'
 
 const route = useRoute()
 const { fetchProjectDocs } = useProjects()
 
 const slug = route.params.slug as string
+
 const { data: docs } = await useAsyncData(`project-docs-${slug}`, () =>
   fetchProjectDocs(slug).then((res) => res.docs)
 )
+
+const firstDoc = computed(() => {
+  if (!docs.value || docs.value.length === 0) return null
+  
+  // Priority: Overview -> First available
+  const overview = docs.value.find(d => d.category === 'overview')
+  return overview || docs.value[0]
+})
 </script>
 
 <style scoped>
-.project-docs {
-  padding: var(--spacing-3xl) var(--spacing-md);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xl);
-}
-
-.page-header {
-  text-align: center;
-}
-
-.eyebrow {
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.85rem;
-  color: var(--color-accent);
-  margin-bottom: var(--spacing-xs);
-  font-weight: 700;
+.project-doc-detail {
+  padding: 60px 24px 100px;
+  background: #fff;
+  min-height: 100vh;
 }
 
 .layout {
   display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: var(--spacing-lg);
-}
-
-.doc-list {
-  padding: var(--spacing-xl);
+  grid-template-columns: 1fr 300px;
+  gap: 60px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .empty {
-  color: var(--color-gray-600);
+  color: #666;
+  text-align: center;
+  padding: 100px 0;
+  font-family: 'Inter', sans-serif;
 }
 
 @media (max-width: 960px) {
   .layout {
     grid-template-columns: 1fr;
+    gap: 40px;
   }
 }
 </style>

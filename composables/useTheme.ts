@@ -29,6 +29,7 @@ export function useTheme() {
   })
 
   function applyPalette(palette: ThemePalette) {
+    if (typeof document === 'undefined') return
     const root = document.documentElement
     root.style.setProperty('--color-primary', palette.primary)
     root.style.setProperty('--color-accent', palette.accent)
@@ -37,6 +38,7 @@ export function useTheme() {
   }
 
   function applyAttributes() {
+    if (typeof document === 'undefined') return
     const root = document.documentElement
     root.setAttribute('data-theme', selectedCountry.value)
     root.setAttribute('data-city', selectedCity.value)

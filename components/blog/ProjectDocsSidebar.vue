@@ -43,8 +43,8 @@ const groupedDocs = computed(() => {
 
 <style scoped>
 .project-docs-sidebar {
-  padding-right: 24px;
-  border-right: 1px solid #e5e5e5;
+  padding-left: 24px;
+  border-left: 1px solid #e5e5e5;
 }
 
 .sidebar-header {
@@ -118,9 +118,9 @@ const groupedDocs = computed(() => {
 
 @media (max-width: 960px) {
   .project-docs-sidebar {
-    border-right: none;
+    border-left: none;
     border-bottom: 1px solid #e5e5e5;
-    padding-right: 0;
+    padding-left: 0;
     padding-bottom: 32px;
     margin-bottom: 32px;
   }

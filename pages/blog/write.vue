@@ -186,11 +186,15 @@ const { createPost, fetchCategories } = useBlog()
 
 // Prevent body scroll
 onMounted(() => {
-  document.body.style.overflow = 'hidden'
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = 'hidden'
+  }
 })
 
 onUnmounted(() => {
-  document.body.style.overflow = ''
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = ''
+  }
 })
 
 const form = reactive({

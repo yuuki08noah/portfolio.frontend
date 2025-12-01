@@ -1,8 +1,8 @@
 <template>
   <section v-if="doc" class="project-doc-detail container">
     <div class="layout">
-      <ProjectDocsSidebar :project-slug="slug" :docs="allDocs || []" />
       <ProjectDocViewer :project-slug="slug" :doc="doc" />
+      <ProjectDocsSidebar :project-slug="slug" :docs="allDocs || []" />
     </div>
   </section>
   <p v-else class="empty container">Document not found.</p>
@@ -37,7 +37,7 @@ const { data: allDocs } = await useAsyncData(`project-${slug}-all-docs`, () =>
 
 .layout {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 1fr 300px;
   gap: 60px;
   max-width: 1200px;
   margin: 0 auto;

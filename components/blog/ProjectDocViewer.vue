@@ -1,24 +1,5 @@
 <template>
   <article class="project-doc-viewer">
-    <header class="viewer-header">
-      <nav class="breadcrumb">
-        <NuxtLink to="/projects">Portfolio</NuxtLink>
-        <span class="separator">/</span>
-        <NuxtLink :to="`/projects/${projectSlug}`">{{ projectSlug }}</NuxtLink>
-        <span class="separator">/</span>
-        <span class="current">{{ doc.category }}</span>
-      </nav>
-      
-      <h1 class="doc-title">{{ doc.title }}</h1>
-      
-      <div class="header-meta">
-        <span class="date" v-if="doc.createdAt">{{ formatDate(doc.createdAt) }}</span>
-        <VelogLinkButton v-if="doc.velogUrl" :url="doc.velogUrl" class="velog-btn" />
-      </div>
-      
-      <div class="header-divider"></div>
-    </header>
-    
     <div class="markdown-content">
       <MarkdownRenderer :content="doc.content" />
     </div>
@@ -37,14 +18,6 @@ defineProps<{
   projectSlug: string
   doc: ProjectDocument
 }>()
-
-const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  }).toUpperCase()
-}
 </script>
 
 <style scoped>
@@ -53,74 +26,7 @@ const formatDate = (dateStr: string) => {
 .project-doc-viewer {
   background: #fff;
   color: #111;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-/* Header */
-.viewer-header {
-  margin-bottom: 40px;
-}
-
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 24px;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #999;
-}
-
-.breadcrumb a {
-  color: #999;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.breadcrumb a:hover {
-  color: #111;
-}
-
-.breadcrumb .current {
-  color: #111;
-  font-weight: 600;
-}
-
-.separator {
-  color: #ccc;
-}
-
-.doc-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 3rem;
-  font-weight: 900;
-  line-height: 1.1;
-  margin: 0 0 24px;
-  letter-spacing: -0.5px;
-}
-
-.header-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32px;
-}
-
-.date {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #666;
-}
-
-.header-divider {
-  height: 4px;
-  background: #111;
-  width: 60px;
+  max-width: 100%; /* Allow full width of grid column */
 }
 
 /* Content */

@@ -106,6 +106,7 @@
 import DiaryCard from '~/components/travel/DiaryCard.vue'
 import PlanCard from '~/components/travel/PlanCard.vue'
 
+const { $api } = useNuxtApp()
 const { fetchDiaries } = useTravelDiary()
 const { fetchPlans } = useTravelPlan()
 
@@ -116,16 +117,26 @@ const { data: plans } = await useAsyncData('travel-plans', () =>
   fetchPlans().then((res) => res.data)
 )
 
+// Fetch stats from API
+const { data: statsData } = await useAsyncData('travel-stats', async () => {
+  try {
+    const res = await $api('/api/v1/travel/stats')
+    return res.stats
+  } catch (e) {
+    return null
+  }
+})
+
 const diaryHighlights = computed(() => (diaries.value || []).slice(0, 3))
 const planHighlights = computed(() => (plans.value || []).slice(0, 3))
 
-// Mock stats - in real app, fetch from API
-const stats = ref({
-  countriesVisited: 12,
-  tripsCompleted: 24,
-  daysTravel: 156,
-  nextTrip: 'Tokyo'
-})
+// Stats from DB
+const stats = computed(() => ({
+  countriesVisited: statsData.value?.countries_visited || 0,
+  tripsCompleted: statsData.value?.trips_completed || 0,
+  daysTravel: statsData.value?.days_traveled || 0,
+  nextTrip: statsData.value?.next_trip || 'TBD'
+}))
 </script>
 
 <style scoped>

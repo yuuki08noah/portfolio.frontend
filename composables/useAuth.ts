@@ -5,6 +5,7 @@ type User = {
   name?: string
   email?: string
   role?: 'user' | 'admin' | 'super_admin'
+  avatar_url?: string | null
 }
 
 export const AUTH_TOKEN_KEY = 'auth_token'
@@ -13,7 +14,7 @@ export const USER_KEY = 'user_data'
 export function useAuth() {
   const config = useRuntimeConfig()
   const apiBase = config.public.backendApiBase as string
-  
+
   const isAuthenticated = ref(false)
   const user = ref<User | undefined>(undefined)
 

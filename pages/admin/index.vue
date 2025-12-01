@@ -1,6 +1,7 @@
 <script setup lang="ts">
 definePageMeta({
-  middleware: 'admin'
+  middleware: 'admin',
+  ssr: true
 })
 
 navigateTo('/admin/projects')

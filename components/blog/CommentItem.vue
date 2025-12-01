@@ -26,6 +26,15 @@
 
       <!-- Actions -->
       <div class="comment-actions">
+        <button 
+          class="like-btn" 
+          :class="{ active: likedByMe }" 
+          :disabled="likeLoading" 
+          @click="toggleLike"
+        >
+          <span class="heart">&hearts;</span>
+          <span class="count">{{ likesCount }}</span>
+        </button>
         <button v-if="isAuthenticated" @click="toggleReply" class="action-btn">
           {{ showReplyForm ? 'Cancel' : 'Reply' }}
         </button>
@@ -62,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import CommentForm from './CommentForm.vue'
 
 const props = defineProps<{
@@ -80,6 +89,9 @@ const showReplyForm = ref(false)
 const isEditing = ref(false)
 const editContent = ref(props.comment.content)
 const saving = ref(false)
+const likesCount = ref(props.comment.likes_count || 0)
+const likedByMe = ref(!!props.comment.liked_by_current_user)
+const likeLoading = ref(false)
 
 const canEdit = computed(() => props.comment.can_edit)
 const canDelete = computed(() => props.comment.can_delete)
@@ -133,6 +145,43 @@ const handleReplied = () => {
   showReplyForm.value = false
   emit('replied')
 }
+
+const toggleLike = async () => {
+  if (!isAuthenticated.value) {
+    alert('Please sign in to like comments.')
+    return
+  }
+
+  if (likeLoading.value) return
+
+  likeLoading.value = true
+  try {
+    const response = await $api<any>(`/comments/${props.comment.id}/like`, {
+      method: likedByMe.value ? 'DELETE' : 'POST'
+    })
+
+    likesCount.value = response?.likes_count ?? (likedByMe.value ? Math.max(0, likesCount.value - 1) : likesCount.value + 1)
+    likedByMe.value = response?.liked_by_current_user ?? !likedByMe.value
+  } catch (e) {
+    alert('Failed to update like')
+  } finally {
+    likeLoading.value = false
+  }
+}
+
+watch(
+  () => props.comment.likes_count,
+  (val) => {
+    likesCount.value = val ?? 0
+  }
+)
+
+watch(
+  () => props.comment.liked_by_current_user,
+  (val) => {
+    likedByMe.value = !!val
+  }
+)
 
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString('en-US', {
@@ -261,6 +310,49 @@ const formatDate = (date: string) => {
 .comment-actions {
   display: flex;
   gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 999px;
+  background: #fff;
+  color: #666;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.like-btn .heart {
+  font-size: 0.9rem;
+}
+
+.like-btn .count {
+  min-width: 18px;
+  text-align: center;
+}
+
+.like-btn:hover {
+  border-color: #111;
+  color: #111;
+}
+
+.like-btn.active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.like-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .action-btn {

@@ -6,6 +6,36 @@
     <div v-else-if="error" class="error-box">{{ error }}</div>
 
     <form v-else class="profile-form" @submit.prevent="handleSubmit">
+      <!-- Profile Photo -->
+      <div class="card">
+        <div class="card-header">
+          <h2>{{ t.profilePhoto }}</h2>
+        </div>
+        <div class="avatar-section">
+          <div class="avatar-preview">
+            <img v-if="avatarPreview || form.avatar_url" :src="avatarPreview || form.avatar_url" alt="Profile" />
+            <div v-else class="avatar-placeholder">
+              <span>{{ form.name?.charAt(0)?.toUpperCase() || '?' }}</span>
+            </div>
+          </div>
+          <div class="avatar-actions">
+            <input
+              ref="avatarInput"
+              type="file"
+              accept="image/*"
+              class="hidden-input"
+              @change="handleAvatarChange"
+            />
+            <button type="button" class="btn ghost" @click="triggerAvatarUpload" :disabled="avatarUploading">
+              {{ avatarUploading ? t.uploading : t.changePhoto }}
+            </button>
+            <button v-if="form.avatar_url" type="button" class="btn ghost danger" @click="removeAvatar" :disabled="avatarUploading">
+              {{ t.removePhoto }}
+            </button>
+            <p class="avatar-hint">{{ t.photoHint }}</p>
+          </div>
+        </div>
+      </div>
       <!-- Basic Info - English -->
       <div v-show="activeLang === 'en'" class="card">
         <div class="card-header">
@@ -389,6 +419,12 @@ const i18n = {
     savedSuccess: 'Profile saved successfully.',
     loadError: 'Failed to load profile.',
     saveError: 'Failed to save.',
+    profilePhoto: 'Profile Photo',
+    changePhoto: 'Change Photo',
+    removePhoto: 'Remove',
+    uploading: 'Uploading...',
+    photoHint: 'Recommended: Square image, at least 200x200px',
+    uploadError: 'Failed to upload image',
     contactLinks: 'Contact & Links',
     email: 'Email',
     phone: 'Phone',
@@ -428,6 +464,12 @@ const i18n = {
     savedSuccess: '프로필이 저장되었습니다.',
     loadError: '프로필을 불러오는데 실패했습니다.',
     saveError: '저장에 실패했습니다.',
+    profilePhoto: '프로필 사진',
+    changePhoto: '사진 변경',
+    removePhoto: '삭제',
+    uploading: '업로드 중...',
+    photoHint: '권장: 정사각형 이미지, 최소 200x200px',
+    uploadError: '이미지 업로드에 실패했습니다',
     contactLinks: '연락처 및 링크',
     email: '이메일',
     phone: '전화번호',
@@ -467,6 +509,12 @@ const i18n = {
     savedSuccess: 'プロフィールが保存されました。',
     loadError: 'プロフィールの読み込みに失敗しました。',
     saveError: '保存に失敗しました。',
+    profilePhoto: 'プロフィール写真',
+    changePhoto: '写真を変更',
+    removePhoto: '削除',
+    uploading: 'アップロード中...',
+    photoHint: '推奨: 正方形の画像、200x200px以上',
+    uploadError: '画像のアップロードに失敗しました',
     contactLinks: '連絡先・リンク',
     email: 'メールアドレス',
     phone: '電話番号',
@@ -562,6 +610,7 @@ interface ProfileForm {
   github_url: string
   linkedin_url: string
   website_url: string
+  avatar_url: string
   skills: string[]
   values: ProfileValue[]
   external_links: ExternalLink[]
@@ -594,6 +643,7 @@ const form = reactive<ProfileForm>({
   github_url: '',
   linkedin_url: '',
   website_url: '',
+  avatar_url: '',
   skills: [],
   values: [],
   external_links: [],
@@ -623,6 +673,54 @@ const form = reactive<ProfileForm>({
   }
 })
 
+// Avatar upload
+const config = useRuntimeConfig()
+const avatarInput = ref<HTMLInputElement | null>(null)
+const avatarPreview = ref<string | null>(null)
+const avatarUploading = ref(false)
+
+const triggerAvatarUpload = () => {
+  avatarInput.value?.click()
+}
+
+const handleAvatarChange = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  // Preview
+  avatarPreview.value = URL.createObjectURL(file)
+  avatarUploading.value = true
+  error.value = ''
+
+  try {
+    const formData = new FormData()
+    formData.append('avatar', file)
+
+    const token = localStorage.getItem('auth_token')
+    const response = await $fetch<{ avatar_url: string }>(`${config.public.backendApiBase}/api/v1/users/1/avatar`, {
+      method: 'POST',
+      body: formData,
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
+
+    form.avatar_url = response.avatar_url
+    avatarPreview.value = null
+  } catch (e: any) {
+    console.error('Avatar upload failed:', e)
+    error.value = t.value.uploadError
+    avatarPreview.value = null
+  } finally {
+    avatarUploading.value = false
+    if (target) target.value = ''
+  }
+}
+
+const removeAvatar = async () => {
+  form.avatar_url = ''
+  avatarPreview.value = null
+}
+
 const loadProfile = async () => {
   loading.value = true
   error.value = ''
@@ -634,6 +732,7 @@ const loadProfile = async () => {
       Object.assign(form, {
         ...response.profile,
         contact_email: response.profile.email || '',
+        avatar_url: response.profile.avatar_url || '',
         skills: response.profile.skills || [],
         values: response.profile.values || [],
         external_links: response.profile.external_links || [],
@@ -933,6 +1032,73 @@ onMounted(loadProfile)
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+/* Avatar Section */
+.avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.avatar-preview {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #f3f4f6;
+  flex-shrink: 0;
+}
+
+.avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 2.5rem;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+}
+
+.avatar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.avatar-actions .btn {
+  min-width: 120px;
+}
+
+.avatar-hint {
+  font-size: 0.8rem;
+  color: #666;
+  margin: 0;
+}
+
+.hidden-input {
+  display: none;
+}
+
+.btn.danger {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.btn.danger:hover {
+  background: #fef2f2;
+  border-color: #dc2626;
+  color: #dc2626;
 }
 
 .card {

@@ -50,7 +50,9 @@
           <button type="button" class="toolbar-btn" title="Link" @click="insertLink">🔗</button>
           <button type="button" class="toolbar-btn" title="Table" @click="addBlock('table')">▦</button>
         </div>
-      <div class="blocks-list">
+
+        <div class="editor-wrapper" ref="editorWrapper">
+          <div class="blocks-list">
         <template v-for="(block, index) in blocks" :key="block.id">
           
           <!-- Row Block -->
@@ -162,6 +164,18 @@
           </div>
         </button>
       </div>
+        </div>
+      </div>
+
+      <!-- Preview Panel -->
+      <div v-show="viewMode !== 'editor'" class="preview-panel">
+        <div class="preview-header">
+          <span>Preview</span>
+        </div>
+        <div class="preview-content">
+          <MarkdownRenderer :content="modelValue" />
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -170,12 +184,16 @@
 import { ref, watch, onMounted, nextTick, computed } from 'vue'
 import EditorBlock from './blocks/EditorBlock.vue'
 import ContentBlock from './blocks/ContentBlock.vue'
+import MarkdownRenderer from '~/components/blog/MarkdownRenderer.vue'
 
 const props = defineProps<{
   modelValue: string
 }>()
 
 const emit = defineEmits(['update:modelValue'])
+
+// View mode
+const viewMode = ref<'editor' | 'split' | 'preview'>('split')
 
 // --- Types ---
 interface Block {
@@ -967,71 +985,221 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
 </script>
 
 <style scoped>
+/* ===================================
+   MARKDOWN EDITOR - Refined Design
+   =================================== */
+
+/* CSS Variables for consistency */
 .markdown-editor-container {
+  --editor-bg: #ffffff;
+  --editor-bg-secondary: #f8fafc;
+  --editor-border: #e2e8f0;
+  --editor-border-hover: #cbd5e1;
+  --editor-text: #1e293b;
+  --editor-text-secondary: #64748b;
+  --editor-text-muted: #94a3b8;
+  --editor-accent: #3b82f6;
+  --editor-accent-hover: #2563eb;
+  --editor-radius-sm: 6px;
+  --editor-radius-md: 8px;
+  --editor-radius-lg: 12px;
+  --editor-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --editor-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --editor-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+  --editor-transition: 0.15s ease;
+  
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #ffffff;
+  background: var(--editor-bg);
   position: relative;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Display', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+  border-radius: var(--editor-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--editor-border);
 }
 
+/* ===================================
+   View Mode Toggle
+   =================================== */
+.view-toggle {
+  display: flex;
+  gap: 4px;
+  padding: 10px 16px;
+  background: var(--editor-bg-secondary);
+  border-bottom: 1px solid var(--editor-border);
+}
+
+.toggle-btn {
+  padding: 8px 18px;
+  background: var(--editor-bg);
+  border: 1px solid var(--editor-border);
+  border-radius: var(--editor-radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--editor-text-secondary);
+  cursor: pointer;
+  transition: all var(--editor-transition);
+}
+
+.toggle-btn:hover {
+  background: var(--editor-bg);
+  border-color: var(--editor-border-hover);
+  color: var(--editor-text);
+}
+
+.toggle-btn.active {
+  background: var(--editor-text);
+  color: var(--editor-bg);
+  border-color: var(--editor-text);
+  box-shadow: var(--editor-shadow-sm);
+}
+
+/* ===================================
+   Editor Main Layout
+   =================================== */
+.editor-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.editor-main.editor .editor-panel {
+  flex: 1;
+  border-right: none;
+}
+
+.editor-main.split .editor-panel,
+.editor-main.split .preview-panel {
+  flex: 1;
+  width: 50%;
+}
+
+.editor-main.preview .preview-panel {
+  flex: 1;
+}
+
+/* ===================================
+   Editor Panel
+   =================================== */
+.editor-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--editor-border);
+  background: var(--editor-bg);
+}
+
+/* ===================================
+   Toolbar
+   =================================== */
 .editor-toolbar {
   display: flex;
   gap: 2px;
-  padding: 8px 12px;
-  border-bottom: 1px solid #e8e8e8;
-  background: #fafafa;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--editor-border);
+  background: var(--editor-bg);
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .toolbar-btn {
-  min-width: 28px;
-  height: 28px;
+  min-width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--editor-radius-sm);
   cursor: pointer;
-  color: #6b7280;
-  font-size: 13px;
+  color: var(--editor-text-secondary);
+  font-size: 14px;
   font-weight: 500;
-  transition: all 0.15s ease;
+  transition: all var(--editor-transition);
   padding: 0 8px;
 }
 
 .toolbar-btn:hover {
-  background: #e5e7eb;
-  color: #111827;
+  background: var(--editor-bg-secondary);
+  color: var(--editor-text);
 }
 
 .toolbar-btn:active {
-  background: #d1d5db;
-  transform: scale(0.98);
+  background: var(--editor-border);
+  transform: scale(0.96);
+}
+
+.toolbar-strikethrough {
+  text-decoration: line-through;
 }
 
 .toolbar-divider {
   width: 1px;
   height: 20px;
-  background: #e5e7eb;
-  margin: 0 4px;
+  background: var(--editor-border);
+  margin: 0 6px;
   align-self: center;
 }
 
+/* ===================================
+   Preview Panel
+   =================================== */
+.preview-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--editor-bg-secondary);
+}
+
+.preview-header {
+  padding: 10px 16px;
+  background: var(--editor-bg);
+  border-bottom: 1px solid var(--editor-border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--editor-text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.preview-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px;
+  background: var(--editor-bg);
+}
+
+.preview-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.preview-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.preview-content::-webkit-scrollbar-thumb {
+  background: var(--editor-border);
+  border-radius: 3px;
+}
+
+.preview-content::-webkit-scrollbar-thumb:hover {
+  background: var(--editor-border-hover);
+}
+
+/* ===================================
+   Editor Wrapper
+   =================================== */
 .editor-wrapper {
   flex: 1;
   overflow-y: auto;
   padding: 24px;
   position: relative;
-  background: #ffffff;
+  background: var(--editor-bg);
 }
 
 .editor-wrapper::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .editor-wrapper::-webkit-scrollbar-track {
@@ -1039,191 +1207,206 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
 }
 
 .editor-wrapper::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 4px;
+  background: var(--editor-border);
+  border-radius: 3px;
 }
 
 .editor-wrapper::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: var(--editor-border-hover);
 }
 
+/* ===================================
+   Blocks List
+   =================================== */
 .blocks-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   margin: 0;
   width: 100%;
   max-width: 100%;
 }
 
-/* Block wrapper - full width */
 .blocks-list > :deep(*) {
   width: 100%;
   max-width: 100%;
 }
 
-/* Typography */
+/* ===================================
+   Typography Styles
+   =================================== */
 .heading-1 { 
-  font-size: 2.5em; 
+  font-size: 2.25em; 
   font-weight: 700; 
-  margin-top: 0.8em;
+  margin-top: 0.6em;
   margin-bottom: 0.3em;
   line-height: 1.2;
-  color: #111827;
-  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--editor-text);
+  letter-spacing: -0.02em;
 }
 
 .heading-2 { 
-  font-size: 1.875em; 
-  font-weight: 700; 
-  margin-top: 0.8em;
+  font-size: 1.75em; 
+  font-weight: 600; 
+  margin-top: 0.6em;
   margin-bottom: 0.3em;
   line-height: 1.3;
-  color: #111827;
+  color: var(--editor-text);
+  letter-spacing: -0.01em;
 }
 
 .heading-3 { 
-  font-size: 1.5em; 
+  font-size: 1.375em; 
   font-weight: 600; 
-  margin-top: 0.8em;
+  margin-top: 0.6em;
   margin-bottom: 0.3em;
   line-height: 1.4;
-  color: #111827;
+  color: var(--editor-text);
+}
+
+.heading-4 {
+  font-size: 1.125em;
+  font-weight: 600;
+  margin-top: 0.6em;
+  margin-bottom: 0.3em;
+  line-height: 1.4;
+  color: var(--editor-text);
+}
+
+.heading-5 {
+  font-size: 1em;
+  font-weight: 600;
+  margin-top: 0.6em;
+  margin-bottom: 0.3em;
+  line-height: 1.4;
+  color: var(--editor-text-secondary);
+}
+
+.heading-6 {
+  font-size: 0.875em;
+  font-weight: 600;
+  margin-top: 0.6em;
+  margin-bottom: 0.3em;
+  line-height: 1.4;
+  color: var(--editor-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .paragraph { 
   font-size: 16px; 
   line-height: 1.75;
-  color: #374151;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--editor-text);
 }
 
+/* ===================================
+   Special Blocks
+   =================================== */
 .callout { 
   background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
   padding: 16px 20px;
-  border-radius: 8px;
-  border-left: 3px solid #3b82f6;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.heading-4 {
-  font-size: 1.25em;
-  font-weight: 600;
-  margin-top: 0.8em;
-  margin-bottom: 0.3em;
-  line-height: 1.4;
-  color: #111827;
-}
-
-.heading-5 {
-  font-size: 1.1em;
-  font-weight: 600;
-  margin-top: 0.8em;
-  margin-bottom: 0.3em;
-  line-height: 1.4;
-  color: #374151;
-}
-
-.heading-6 {
-  font-size: 1em;
-  font-weight: 600;
-  margin-top: 0.8em;
-  margin-bottom: 0.3em;
-  line-height: 1.4;
-  color: #6b7280;
+  border-radius: var(--editor-radius-md);
+  border-left: 3px solid var(--editor-accent);
+  box-shadow: var(--editor-shadow-sm);
 }
 
 .quote {
-  font-size: 1.1em;
+  font-size: 1.05em;
   font-style: italic;
-  color: #4b5563;
-  border-left: 4px solid #d1d5db;
-  padding-left: 16px;
-  margin: 8px 0;
+  color: var(--editor-text-secondary);
+  border-left: 3px solid var(--editor-border-hover);
+  padding-left: 20px;
+  margin: 12px 0;
 }
 
 .code {
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 14px;
-  background: #1f2937;
-  color: #e5e7eb;
-  padding: 16px;
-  border-radius: 8px;
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 16px 20px;
+  border-radius: var(--editor-radius-md);
   overflow-x: auto;
   white-space: pre-wrap;
+  line-height: 1.6;
 }
 
 .bulleted-list,
 .numbered-list {
   font-size: 16px;
   line-height: 1.75;
-  color: #374151;
+  color: var(--editor-text);
   padding-left: 8px;
 }
 
 .bulleted-list::before {
   content: '•';
-  margin-right: 8px;
-  color: #6b7280;
+  margin-right: 10px;
+  color: var(--editor-accent);
+  font-weight: 600;
 }
 
 .numbered-list::before {
   content: '1.';
-  margin-right: 8px;
-  color: #6b7280;
+  margin-right: 10px;
+  color: var(--editor-accent);
+  font-weight: 600;
 }
 
 .todo {
   font-size: 16px;
   line-height: 1.75;
-  color: #374151;
+  color: var(--editor-text);
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 10px;
 }
 
 .todo::before {
   content: '☐';
   font-size: 18px;
-  color: #9ca3af;
+  color: var(--editor-border-hover);
 }
 
 .divider {
   border: none;
-  border-top: 2px solid #e5e7eb;
-  margin: 24px 0;
+  border-top: 1px solid var(--editor-border);
+  margin: 28px 0;
   height: 0;
   min-height: 0;
 }
 
 .image {
   max-width: 100%;
-  border-radius: 8px;
-  background: #f3f4f6;
-  padding: 8px;
+  border-radius: var(--editor-radius-md);
+  background: var(--editor-bg-secondary);
+  padding: 12px;
   text-align: center;
-  color: #6b7280;
+  color: var(--editor-text-muted);
   font-style: italic;
+  border: 1px dashed var(--editor-border);
 }
 
 .table {
-  font-family: 'Monaco', 'Menlo', monospace;
-  font-size: 14px;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  font-size: 13px;
   white-space: pre;
-  background: #f9fafb;
-  padding: 12px;
-  border-radius: 6px;
-  border: 1px solid #e5e7eb;
+  background: var(--editor-bg-secondary);
+  padding: 14px;
+  border-radius: var(--editor-radius-md);
+  border: 1px solid var(--editor-border);
   overflow-x: auto;
 }
 
-/* Layout */
+/* ===================================
+   Layout Blocks
+   =================================== */
 .block-row {
   display: flex;
-  gap: 24px;
+  gap: 20px;
   width: 100%;
   align-items: flex-start;
-  margin: 8px 0;
+  margin: 12px 0;
 }
 
 .block-column {
@@ -1231,18 +1414,18 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 12px;
+  gap: 4px;
+  padding: 16px;
   border: 1px solid transparent;
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  border-radius: var(--editor-radius-md);
+  transition: all var(--editor-transition);
   position: relative;
-  background: #fafafa;
+  background: var(--editor-bg-secondary);
 }
 
 .block-column:hover {
-  border-color: #e5e7eb;
-  background: #f9fafb;
+  border-color: var(--editor-border);
+  background: var(--editor-bg);
 }
 
 .column-content {
@@ -1257,82 +1440,86 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  color: var(--editor-text-muted);
   font-size: 13px;
-  border: 2px dashed #d1d5db;
-  border-radius: 6px;
+  border: 2px dashed var(--editor-border);
+  border-radius: var(--editor-radius-sm);
   margin-top: 8px;
-  transition: all 0.2s ease;
-  background: #fafafa;
+  transition: all var(--editor-transition);
+  background: var(--editor-bg-secondary);
 }
 
 .empty-column-drop-zone:hover {
-  border-color: #3b82f6;
+  border-color: var(--editor-accent);
   background: #eff6ff;
-  color: #3b82f6;
+  color: var(--editor-accent);
 }
 
 .empty-editor {
   padding: 60px 20px;
-  color: #9ca3af;
+  color: var(--editor-text-muted);
   cursor: text;
   text-align: center;
-  font-size: 16px;
+  font-size: 15px;
 }
 
-/* Slash Menu */
-.slash-menu {
+/* ===================================
+   Menus (Slash & Settings)
+   =================================== */
+.slash-menu,
+.settings-menu {
   position: absolute;
   z-index: 100;
-  width: 280px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05);
-  max-height: 320px;
+  width: 300px;
+  background: var(--editor-bg);
+  border: 1px solid var(--editor-border);
+  border-radius: var(--editor-radius-lg);
+  box-shadow: var(--editor-shadow-lg);
+  max-height: 360px;
   overflow-y: auto;
-  padding: 6px;
+  padding: 8px;
 }
 
 .menu-header {
-  padding: 8px 12px 4px;
+  padding: 10px 14px 6px;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  color: #6b7280;
-  letter-spacing: 0.5px;
+  color: var(--editor-text-muted);
+  letter-spacing: 0.08em;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
-  padding: 10px 12px;
+  padding: 10px 14px;
   border: none;
   background: transparent;
   text-align: left;
   cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.15s ease;
+  border-radius: var(--editor-radius-sm);
+  transition: all var(--editor-transition);
 }
 
-.menu-item:hover, .menu-item.active {
-  background: #f3f4f6;
+.menu-item:hover, 
+.menu-item.active {
+  background: var(--editor-bg-secondary);
 }
 
 .menu-icon {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #374151;
+  background: var(--editor-bg-secondary);
+  border: 1px solid var(--editor-border);
+  border-radius: var(--editor-radius-sm);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--editor-text);
   flex-shrink: 0;
 }
 
@@ -1345,27 +1532,44 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
 .menu-label { 
   font-size: 14px; 
   font-weight: 500;
-  color: #111827;
+  color: var(--editor-text);
   line-height: 1.3;
 }
 
 .menu-desc { 
   font-size: 12px; 
-  color: #6b7280;
+  color: var(--editor-text-muted);
   line-height: 1.3;
 }
 
-/* Settings Menu (::) */
-.settings-menu {
-  position: absolute;
-  z-index: 100;
-  width: 280px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05);
-  max-height: 400px;
-  overflow-y: auto;
-  padding: 6px;
+/* ===================================
+   Responsive Design
+   =================================== */
+@media (max-width: 768px) {
+  .editor-main.split {
+    flex-direction: column;
+  }
+  
+  .editor-main.split .editor-panel,
+  .editor-main.split .preview-panel {
+    width: 100%;
+    flex: none;
+    height: 50%;
+  }
+  
+  .editor-panel {
+    border-right: none;
+    border-bottom: 1px solid var(--editor-border);
+  }
+  
+  .editor-toolbar {
+    padding: 8px 10px;
+  }
+  
+  .toolbar-btn {
+    min-width: 28px;
+    height: 28px;
+    font-size: 13px;
+  }
 }
 </style>

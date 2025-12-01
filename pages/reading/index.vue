@@ -219,9 +219,9 @@ const formatDate = (dateStr: string) => {
 }
 
 .reading-container {
-  max-width: 1600px;
+  max-width: var(--max-width);
   margin: 0 auto;
-  padding: 100px 60px 80px;
+  padding: 100px var(--spacing-xl) 80px;
 }
 
 /* Header */

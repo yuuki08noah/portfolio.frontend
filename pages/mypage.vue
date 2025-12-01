@@ -220,7 +220,8 @@ const { user } = useAuth()
 const { get, put } = useApi()
 
 definePageMeta({
-  middleware: ['auth']
+  middleware: ['auth'],
+  ssr: true
 })
 
 interface ProfileData {

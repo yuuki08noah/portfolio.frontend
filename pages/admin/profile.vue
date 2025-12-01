@@ -372,7 +372,8 @@ import AdminLayout from '~/components/admin/AdminLayout.vue'
 import LangTabs from '~/components/admin/LangTabs.vue'
 
 definePageMeta({
-  middleware: ['admin']
+  middleware: ['admin'],
+  ssr: true
 })
 
 // i18n labels

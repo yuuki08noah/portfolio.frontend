@@ -73,11 +73,11 @@ watch(() => route.params.locale, () => {
   min-height: 100vh;
   color: #1a1a1a;
   font-family: 'Merriweather', serif;
-  padding: 80px 20px;
+  padding: 80px var(--spacing-xl);
 }
 
 .content-container {
-  max-width: 1200px; /* Increased from 900px */
+  max-width: var(--max-width);
   margin: 0 auto;
 }
 

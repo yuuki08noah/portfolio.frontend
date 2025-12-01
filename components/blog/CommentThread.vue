@@ -61,9 +61,7 @@ const loadComments = async () => {
   error.value = ''
   
   try {
-    const response = await $api<any>(`/comments?commentable_type=${props.commentableType}&commentable_id=${props.commentableId}&locale=${locale.value}`, {
-      auth: false
-    })
+    const response = await $api<any>(`/comments?commentable_type=${props.commentableType}&commentable_id=${props.commentableId}&locale=${locale.value}`)
     
     comments.value = response.comments || response
     totalComments.value = response.total || (Array.isArray(response) ? response.length : 0)

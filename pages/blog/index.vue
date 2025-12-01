@@ -102,9 +102,9 @@ const { data: projects } = await useAsyncData('projects', async () => {
 }
 
 .container {
-  max-width: 1600px;
+  max-width: var(--max-width);
   margin: 0 auto;
-  padding: 0 60px;
+  padding: 0 var(--spacing-xl);
 }
 
 .page-title {

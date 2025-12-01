@@ -84,7 +84,8 @@ import AdminLayout from '~/components/admin/AdminLayout.vue'
 import type { PortfolioProject } from '~/types/portfolio'
 
 definePageMeta({
-  middleware: ['admin']
+  middleware: ['admin'],
+  ssr: true
 })
 
 const { fetchProjects, deleteProject } = useProjects()

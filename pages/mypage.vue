@@ -26,11 +26,27 @@
         <!-- Sidebar Column -->
         <aside class="sidebar-column">
           <div class="profile-section">
-            <div class="avatar-frame">
-              <div class="avatar-img">
-                {{ user?.name?.charAt(0).toUpperCase() || 'U' }}
+            <div class="avatar-frame" :class="{ 'has-image': avatarPreview || user?.avatar_url }">
+              <input
+                ref="avatarInput"
+                type="file"
+                accept="image/*"
+                class="avatar-input"
+                @change="handleAvatarChange"
+              />
+              <div class="avatar-img" @click="triggerAvatarUpload" :style="avatarStyle">
+                <img v-if="avatarPreview || user?.avatar_url" :src="avatarPreview || user?.avatar_url" alt="Avatar" />
+                <span v-else class="avatar-placeholder">{{ user?.name?.charAt(0).toUpperCase() || 'U' }}</span>
               </div>
+              <button class="avatar-change-btn" @click="triggerAvatarUpload" title="Change avatar">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M14 11V14H2V11H0V14C0 15.1 0.9 16 2 16H14C15.1 16 16 15.1 16 14V11H14ZM13 7L11.59 5.59L9 8.17V0H7V8.17L4.41 5.59L3 7L8 12L13 7Z" fill="currentColor"/>
+                </svg>
+              </button>
             </div>
+            <button v-if="avatarFile" class="save-avatar-btn" @click="saveAvatar" :disabled="uploadingAvatar">
+              {{ uploadingAvatar ? 'Uploading...' : 'Save Avatar' }}
+            </button>
             <h2 class="profile-name">{{ user?.name || 'User' }}</h2>
             <p class="profile-role">{{ user?.role || 'Contributor' }}</p>
             <p class="profile-email">{{ user?.email }}</p>
@@ -39,8 +55,8 @@
             
             <div class="profile-stats">
               <div class="stat-row">
-                <span class="stat-label">Skills</span>
-                <span class="stat-value">{{ profile.skills?.length || 0 }}</span>
+                <span class="stat-label">Position</span>
+                <span class="stat-value">{{ profile.job_position || 'N/A' }}</span>
               </div>
               <div class="stat-row">
                 <span class="stat-label">Location</span>
@@ -150,31 +166,6 @@
               </form>
             </div>
 
-            <!-- Skills Tab -->
-            <div v-else-if="activeTab === 'skills'" class="article-content">
-              <div class="skills-wrapper">
-                <div class="skills-intro" v-if="isEditing">
-                  <p>Curate your professional expertise. Add skills to your portfolio.</p>
-                  <button type="button" class="btn-text-add" @click="addSkill">+ Add New Skill</button>
-                </div>
-
-                <div class="skills-list" :class="{ editing: isEditing }">
-                  <template v-if="isEditing">
-                    <div v-for="(skill, index) in profileForm.skills" :key="index" class="skill-edit-item">
-                      <input v-model="profileForm.skills[index]" type="text" class="input-line" placeholder="Skill..." />
-                      <button type="button" class="btn-remove" @click="removeSkill(index)">×</button>
-                    </div>
-                  </template>
-                  <template v-else>
-                    <span v-for="(skill, index) in profile.skills" :key="index" class="skill-chip">
-                      {{ skill }}
-                    </span>
-                    <div v-if="profile.skills.length === 0" class="empty-text">No skills listed.</div>
-                  </template>
-                </div>
-              </div>
-            </div>
-
             <!-- Settings Tab -->
             <div v-else-if="activeTab === 'settings'" class="article-content">
               <ul class="settings-menu">
@@ -219,6 +210,11 @@ import { useApi } from '~/composables/useApi'
 const { user } = useAuth()
 const { get, put } = useApi()
 
+const avatarInput = ref<HTMLInputElement | null>(null)
+const avatarFile = ref<File | null>(null)
+const avatarPreview = ref('')
+const uploadingAvatar = ref(false)
+
 definePageMeta({
   middleware: ['auth'],
   ssr: true
@@ -235,12 +231,10 @@ interface ProfileData {
   github_url: string
   linkedin_url: string
   website_url: string
-  skills: string[]
 }
 
 const tabs = [
   { id: 'profile', label: 'Profile' },
-  { id: 'skills', label: 'Expertise' },
   { id: 'settings', label: 'Settings' }
 ]
 
@@ -263,6 +257,13 @@ const currentDate = computed(() => {
   }).toUpperCase()
 })
 
+const avatarStyle = computed(() => {
+  if (avatarPreview.value || user.value?.avatar_url) {
+    return { cursor: 'pointer' }
+  }
+  return {}
+})
+
 const profile = reactive<ProfileData>({
   name: '',
   tagline: '',
@@ -273,8 +274,7 @@ const profile = reactive<ProfileData>({
   phone: '',
   github_url: '',
   linkedin_url: '',
-  website_url: '',
-  skills: []
+  website_url: ''
 })
 
 const profileForm = reactive<ProfileData>({
@@ -287,21 +287,110 @@ const profileForm = reactive<ProfileData>({
   phone: '',
   github_url: '',
   linkedin_url: '',
-  website_url: '',
-  skills: []
+  website_url: ''
 })
+
+const triggerAvatarUpload = () => {
+  avatarInput.value?.click()
+}
+
+const handleAvatarChange = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  
+  if (file) {
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+    
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB')
+      return
+    }
+    
+    avatarFile.value = file
+    
+    // Create preview
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      avatarPreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+const saveAvatar = async () => {
+  if (!avatarFile.value) return
+  
+  uploadingAvatar.value = true
+  try {
+    const config = useRuntimeConfig()
+    const token = localStorage.getItem('auth_token')
+    const formData = new FormData()
+    formData.append('avatar', avatarFile.value)
+    
+    const userId = user.value?.id
+    if (!userId) throw new Error('User not found')
+    
+    await $fetch(`${config.public.backendApiBase}/api/v1/users/${userId}/avatar`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    
+    // Refresh user data
+    await loadProfile()
+    avatarFile.value = null
+    avatarPreview.value = ''
+    saveSuccess.value = 'Avatar updated!'
+    setTimeout(() => { saveSuccess.value = '' }, 2000)
+  } catch (e) {
+    saveError.value = 'Failed to upload avatar'
+    setTimeout(() => { saveError.value = '' }, 3000)
+  } finally {
+    uploadingAvatar.value = false
+  }
+}
 
 const loadProfile = async () => {
   try {
-    const response = await get<{ profile: ProfileData }>('/api/v1/portfolio/profile')
-    if (response?.profile) {
+    // Load current user's data from /api/v1/users/me (not portfolio profile)
+    const response = await get<{ user: any }>('/api/v1/users/me')
+    if (response?.user) {
+      const userData = response.user
+      
+      // Update local user state and localStorage
+      user.value = userData
+      if (process.client) {
+        localStorage.setItem('user_data', JSON.stringify(userData))
+      }
+
       Object.assign(profile, {
-        ...response.profile,
-        skills: response.profile.skills || []
+        name: userData.name || '',
+        tagline: userData.profile || '',
+        bio: userData.bio || '',
+        job_position: userData.job_position || '',
+        location_country: userData.location?.country || '',
+        location_city: userData.location?.city || '',
+        phone: userData.phone || '',
+        github_url: userData.social?.github || '',
+        linkedin_url: userData.social?.linkedin || '',
+        website_url: userData.social?.website || ''
       })
       Object.assign(profileForm, {
-        ...response.profile,
-        skills: [...(response.profile.skills || [])]
+        name: userData.name || '',
+        tagline: userData.profile || '',
+        bio: userData.bio || '',
+        job_position: userData.job_position || '',
+        location_country: userData.location?.country || '',
+        location_city: userData.location?.city || '',
+        phone: userData.phone || '',
+        github_url: userData.social?.github || '',
+        linkedin_url: userData.social?.linkedin || '',
+        website_url: userData.social?.website || ''
       })
     }
   } catch (e) {
@@ -311,10 +400,7 @@ const loadProfile = async () => {
 
 const cancelEdit = () => {
   isEditing.value = false
-  Object.assign(profileForm, {
-    ...profile,
-    skills: [...profile.skills]
-  })
+  Object.assign(profileForm, { ...profile })
   saveError.value = ''
   saveSuccess.value = ''
 }
@@ -324,11 +410,24 @@ const handleSaveProfile = async () => {
   saveError.value = ''
   saveSuccess.value = ''
   try {
-    await put('/api/v1/portfolio/profile', profileForm)
-    Object.assign(profile, {
-      ...profileForm,
-      skills: [...profileForm.skills]
+    // Update current user's data via /api/v1/users/:id
+    const userId = user.value?.id
+    if (!userId) {
+      throw new Error('User not found')
+    }
+    await put(`/api/v1/users/${userId}`, {
+      name: profileForm.name,
+      profile: profileForm.tagline,
+      bio: profileForm.bio,
+      job_position: profileForm.job_position,
+      location_country: profileForm.location_country,
+      location_city: profileForm.location_city,
+      phone: profileForm.phone,
+      github_url: profileForm.github_url,
+      linkedin_url: profileForm.linkedin_url,
+      website_url: profileForm.website_url
     })
+    Object.assign(profile, { ...profileForm })
     saveSuccess.value = 'Profile updated.'
     setTimeout(() => {
       isEditing.value = false
@@ -339,14 +438,6 @@ const handleSaveProfile = async () => {
   } finally {
     saving.value = false
   }
-}
-
-const addSkill = () => {
-  profileForm.skills.push('')
-}
-
-const removeSkill = (index: number) => {
-  profileForm.skills.splice(index, 1)
 }
 
 onMounted(loadProfile)
@@ -364,9 +455,9 @@ onMounted(loadProfile)
 }
 
 .container {
-  max-width: 1200px;
+  max-width: var(--max-width, 1400px);
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 var(--spacing-xl, 2rem);
 }
 
 /* Header */
@@ -466,6 +557,20 @@ onMounted(loadProfile)
   margin: 0 auto 24px;
   border: 1px solid #111;
   padding: 4px;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.avatar-frame:hover {
+  border-color: #666;
+}
+
+.avatar-frame.has-image .avatar-change-btn {
+  opacity: 1;
+}
+
+.avatar-input {
+  display: none;
 }
 
 .avatar-img {
@@ -478,6 +583,75 @@ onMounted(loadProfile)
   font-family: 'Playfair Display', serif;
   font-size: 3rem;
   color: #111;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.avatar-img:hover {
+  background: #eee;
+}
+
+.avatar-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  user-select: none;
+}
+
+.avatar-change-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  background: #111;
+  color: #fff;
+  border: 1px solid #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.3s;
+}
+
+.avatar-change-btn:hover {
+  background: #333;
+}
+
+.avatar-frame:hover .avatar-change-btn {
+  opacity: 1;
+}
+
+.save-avatar-btn {
+  width: 100%;
+  padding: 8px 16px;
+  background: #111;
+  color: #fff;
+  border: 1px solid #111;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: all 0.2s;
+}
+
+.save-avatar-btn:hover:not(:disabled) {
+  background: #fff;
+  color: #111;
+}
+
+.save-avatar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .profile-name {
@@ -716,71 +890,6 @@ onMounted(loadProfile)
   font-size: 1.5rem;
   color: #ccc;
   letter-spacing: 8px;
-}
-
-/* Skills */
-.skills-intro {
-  text-align: center;
-  margin-bottom: 40px;
-  padding: 40px;
-  background: #f9f9f9;
-  border: 1px solid #e5e5e5;
-}
-
-.btn-text-add {
-  background: none;
-  border: 1px solid #111;
-  padding: 8px 16px;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  cursor: pointer;
-  margin-top: 16px;
-  transition: all 0.2s;
-}
-
-.btn-text-add:hover {
-  background: #f5f5f5;
-  color: #111;
-}
-
-.skills-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.skills-list.editing {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-}
-
-.skill-chip {
-  padding: 8px 16px;
-  border: 1px solid #111;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.skill-edit-item {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-remove {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  color: #999;
-}
-
-.btn-remove:hover {
-  color: #d00;
 }
 
 /* Settings */

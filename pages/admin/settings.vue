@@ -59,7 +59,8 @@
 import AdminLayout from '~/components/admin/AdminLayout.vue'
 
 definePageMeta({
-  middleware: ['auth']
+  middleware: ['auth'],
+  ssr: true
 })
 
 const { fetchSettings, bulkUpdateSettings } = useSiteSettings()

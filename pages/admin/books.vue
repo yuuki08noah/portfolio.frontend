@@ -133,7 +133,8 @@ import LangTabs from '~/components/admin/LangTabs.vue'
 import '~/assets/css/admin.css'
 
 definePageMeta({
-  middleware: ['auth']
+  middleware: ['auth'],
+  ssr: true
 })
 
 const { fetchBooks, createBook, updateBook, deleteBook: removeBook } = useReading()

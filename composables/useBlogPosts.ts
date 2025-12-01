@@ -1,7 +1,7 @@
 export const useBlogPosts = () => {
   const { $api } = useApi()
 
-  const fetchBlogPosts = async (params?: { status?: string; category_id?: string; tag?: string; q?: string }) => {
+  const fetchBlogPosts = async (params?: { status?: string; category_id?: string; tag?: string; q?: string; auth?: boolean }) => {
     const query = new URLSearchParams()
     if (params?.status) query.append('status', params.status)
     if (params?.category_id) query.append('category_id', params.category_id)
@@ -9,11 +9,12 @@ export const useBlogPosts = () => {
     if (params?.q) query.append('q', params.q)
 
     const queryString = query.toString()
-    return await $api(`/api/v1/blog/posts${queryString ? `?${queryString}` : ''}`, { method: 'GET', auth: false })
+    const requireAuth = params?.auth !== undefined ? params.auth : true
+    return await $api(`/api/v1/blog/posts${queryString ? `?${queryString}` : ''}`, { method: 'GET', auth: requireAuth })
   }
 
-  const fetchBlogPost = async (id: string) => {
-    return await $api(`/api/v1/blog/posts/${id}`, { method: 'GET', auth: false })
+  const fetchBlogPost = async (id: string, auth: boolean = false) => {
+    return await $api(`/api/v1/blog/posts/${id}`, { method: 'GET', auth })
   }
 
   const createBlogPost = async (data: any) => {

@@ -171,7 +171,8 @@ import type { AdminStatus } from '~/types/admin'
 import { AUTH_TOKEN_KEY } from '~/composables/useAuth'
 
 definePageMeta({
-  middleware: ['admin']
+  middleware: ['admin'],
+  ssr: true
 })
 
 const { admins, loading, error, fetchAdmins, inviteAdmin, approveAdmin, updateStatus, acceptInvite } = useAdminAccounts()

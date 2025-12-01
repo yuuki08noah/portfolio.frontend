@@ -20,7 +20,7 @@ const props = defineProps<{
   placeholder?: string
 }>()
 
-const emit = defineEmits(['update:modelValue', 'enter', 'backspace', 'arrow-up', 'arrow-down', 'slash'])
+const emit = defineEmits(['update:modelValue', 'enter', 'backspace', 'arrow-up', 'arrow-down', 'slash', 'double-colon'])
 
 const element = ref<HTMLElement | null>(null)
 const isLocked = ref(false)
@@ -48,6 +48,9 @@ const onInput = (e: Event) => {
     const text = target.innerText
     if (text.includes('/')) {
       emit('slash', e)
+    }
+    if (text.includes('::')) {
+      emit('double-colon', e)
     }
   }
 

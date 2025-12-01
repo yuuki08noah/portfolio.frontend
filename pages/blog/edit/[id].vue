@@ -9,6 +9,7 @@ const route = useRoute()
 const { updatePost } = useBlog()
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
+  ssr: true
 })
 </script>

@@ -12,6 +12,7 @@ const { data: drafts } = await useAsyncData('drafts', () =>
 )
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
+  ssr: true
 })
 </script>

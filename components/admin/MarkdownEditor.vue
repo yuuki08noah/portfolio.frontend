@@ -26,33 +26,127 @@
       <!-- Editor Panel -->
       <div v-show="viewMode !== 'preview'" class="editor-panel">
         <div class="editor-toolbar">
-          <button type="button" class="toolbar-btn" title="Add Block" @click="addBlock('paragraph')">＋</button>
+          <!-- Text formatting group -->
+          <div class="toolbar-group">
+            <button type="button" class="toolbar-btn" title="Bold" @click="wrapSelection('**')"><strong>B</strong></button>
+            <button type="button" class="toolbar-btn toolbar-italic" title="Italic" @click="wrapSelection('*')">I</button>
+            <button type="button" class="toolbar-btn toolbar-strikethrough" title="Strikethrough" @click="wrapSelection('~~')">S</button>
+            <button type="button" class="toolbar-btn toolbar-code" title="Inline Code" @click="wrapSelection('`')">&lt;/&gt;</button>
+          </div>
+          
           <span class="toolbar-divider"></span>
-          <button type="button" class="toolbar-btn" title="Heading 1" @click="addBlock('heading-1')">H<sub>1</sub></button>
-          <button type="button" class="toolbar-btn" title="Heading 2" @click="addBlock('heading-2')">H<sub>2</sub></button>
-          <button type="button" class="toolbar-btn" title="Heading 3" @click="addBlock('heading-3')">H<sub>3</sub></button>
+          
+          <!-- Headings group -->
+          <div class="toolbar-group">
+            <button type="button" class="toolbar-btn" title="Heading 1" @click="addBlock('heading-1')">H1</button>
+            <button type="button" class="toolbar-btn" title="Heading 2" @click="addBlock('heading-2')">H2</button>
+            <button type="button" class="toolbar-btn" title="Heading 3" @click="addBlock('heading-3')">H3</button>
+          </div>
+          
           <span class="toolbar-divider"></span>
-          <button type="button" class="toolbar-btn" title="Bold" @click="wrapSelection('**')"><strong>B</strong></button>
-          <button type="button" class="toolbar-btn" title="Italic" @click="wrapSelection('*')"><em>I</em></button>
-          <button type="button" class="toolbar-btn toolbar-strikethrough" title="Strikethrough" @click="wrapSelection('~~')">S</button>
-          <button type="button" class="toolbar-btn" title="Inline Code" @click="wrapSelection('`')"><code>`</code></button>
+          
+          <!-- Lists group -->
+          <div class="toolbar-group">
+            <button type="button" class="toolbar-btn" title="Bulleted List" @click="addBlock('bulleted-list')">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <circle cx="2" cy="4" r="1.5"/>
+                <circle cx="2" cy="8" r="1.5"/>
+                <circle cx="2" cy="12" r="1.5"/>
+                <rect x="5" y="3" width="10" height="2" rx="0.5"/>
+                <rect x="5" y="7" width="10" height="2" rx="0.5"/>
+                <rect x="5" y="11" width="10" height="2" rx="0.5"/>
+              </svg>
+            </button>
+            <button type="button" class="toolbar-btn" title="Numbered List" @click="addBlock('numbered-list')">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <text x="1" y="5" font-size="5" font-weight="600">1</text>
+                <text x="1" y="9" font-size="5" font-weight="600">2</text>
+                <text x="1" y="13" font-size="5" font-weight="600">3</text>
+                <rect x="5" y="3" width="10" height="2" rx="0.5"/>
+                <rect x="5" y="7" width="10" height="2" rx="0.5"/>
+                <rect x="5" y="11" width="10" height="2" rx="0.5"/>
+              </svg>
+            </button>
+            <button type="button" class="toolbar-btn" title="To-do" @click="addBlock('todo')">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="2" width="12" height="12" rx="2"/>
+                <path d="M5 8L7 10L11 6"/>
+              </svg>
+            </button>
+          </div>
+          
           <span class="toolbar-divider"></span>
-          <button type="button" class="toolbar-btn" title="Bulleted List" @click="addBlock('bulleted-list')">•</button>
-          <button type="button" class="toolbar-btn" title="Numbered List" @click="addBlock('numbered-list')">1.</button>
-          <button type="button" class="toolbar-btn" title="To-do" @click="addBlock('todo')">☑</button>
+          
+          <!-- Block elements group -->
+          <div class="toolbar-group">
+            <button type="button" class="toolbar-btn" title="Quote" @click="addBlock('quote')">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M3 3h4v4H5v2c0 1 1 2 2 2v2c-2.5 0-4-1.5-4-4V3zm7 0h4v4h-2v2c0 1 1 2 2 2v2c-2.5 0-4-1.5-4-4V3z"/>
+              </svg>
+            </button>
+            <button type="button" class="toolbar-btn" title="Code Block" @click="addBlock('code')">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M5 4L1 8l4 4M11 4l4 4-4 4"/>
+              </svg>
+            </button>
+            <button type="button" class="toolbar-btn" title="Callout" @click="addBlock('callout')">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 1a7 7 0 100 14A7 7 0 008 1zM7 5h2v1H7V5zm0 2h2v4H7V7z"/>
+              </svg>
+            </button>
+            <button type="button" class="toolbar-btn" title="Divider" @click="addBlock('divider')">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <rect x="1" y="7" width="14" height="2" rx="1"/>
+              </svg>
+            </button>
+          </div>
+          
           <span class="toolbar-divider"></span>
-          <button type="button" class="toolbar-btn" title="Quote" @click="addBlock('quote')">❝</button>
-          <button type="button" class="toolbar-btn" title="Code Block" @click="addBlock('code')">💻</button>
-          <button type="button" class="toolbar-btn" title="Callout" @click="addBlock('callout')">💡</button>
-          <button type="button" class="toolbar-btn" title="Divider" @click="addBlock('divider')">—</button>
+          
+          <!-- Media group -->
+          <div class="toolbar-group">
+            <button type="button" class="toolbar-btn" title="Image" @click="addBlock('image')">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="2" width="12" height="12" rx="2"/>
+                <circle cx="5.5" cy="5.5" r="1.5" fill="currentColor"/>
+                <path d="M2 11l3-3 2 2 4-4 3 3"/>
+              </svg>
+            </button>
+            <button type="button" class="toolbar-btn" title="Link" @click="insertLink">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M6.5 9.5a3 3 0 004.2.2l2-2a3 3 0 00-4.2-4.2l-1.1 1M9.5 6.5a3 3 0 00-4.2-.2l-2 2a3 3 0 004.2 4.2l1.1-1"/>
+              </svg>
+            </button>
+            <button type="button" class="toolbar-btn" title="Table" @click="addBlock('table')">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="2" width="12" height="12" rx="1"/>
+                <line x1="2" y1="6" x2="14" y2="6"/>
+                <line x1="2" y1="10" x2="14" y2="10"/>
+                <line x1="6" y1="2" x2="6" y2="14"/>
+                <line x1="10" y1="2" x2="10" y2="14"/>
+              </svg>
+            </button>
+          </div>
+          
           <span class="toolbar-divider"></span>
-          <button type="button" class="toolbar-btn" title="Image" @click="addBlock('image')">🖼️</button>
-          <button type="button" class="toolbar-btn" title="Link" @click="insertLink">🔗</button>
-          <button type="button" class="toolbar-btn" title="Table" @click="addBlock('table')">▦</button>
+          
+          <!-- Add block -->
+          <button type="button" class="toolbar-btn toolbar-add" title="Add Block" @click="addBlock('paragraph')">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="8" y1="3" x2="8" y2="13"/>
+              <line x1="3" y1="8" x2="13" y2="8"/>
+            </svg>
+          </button>
         </div>
 
-        <div class="editor-wrapper" ref="editorWrapper">
-          <div class="blocks-list">
+        <div 
+          class="editor-wrapper" 
+          ref="editorWrapper" 
+          @click="handleEditorClick"
+          @dragover="handleDragOver"
+          @drop="handleDrop"
+        >
+          <div class="blocks-list" ref="blocksList">
         <template v-for="(block, index) in blocks" :key="block.id">
           
           <!-- Row Block -->
@@ -226,6 +320,7 @@ interface Setting {
 const blocks = ref<Block[]>([])
 const isInternalUpdate = ref(false)
 const editorWrapper = ref<HTMLElement | null>(null)
+const blocksList = ref<HTMLElement | null>(null)
 
 // Slash Menu
 const showSlashMenu = ref(false)
@@ -572,6 +667,75 @@ const addBlock = (type: Block['type']) => {
   })
 }
 
+// Handle click on empty editor area
+const handleEditorClick = (e: MouseEvent) => {
+  const target = e.target as HTMLElement
+  
+  // Check if clicked on editor-wrapper or blocks-list directly (not on a block)
+  if (target === editorWrapper.value || target === blocksList.value) {
+    // Add a new paragraph block
+    const newBlock: Block = {
+      id: generateId(),
+      type: 'paragraph',
+      content: ''
+    }
+    blocks.value.push(newBlock)
+    
+    // Focus the new block after rendering
+    nextTick(() => {
+      const el = document.querySelector(`[data-block-id="${newBlock.id}"] [contenteditable]`) as HTMLElement
+      if (el) {
+        el.focus()
+      }
+    })
+  }
+}
+
+// Handle drag over empty editor area
+const handleDragOver = (e: DragEvent) => {
+  e.preventDefault()
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'move'
+  }
+}
+
+// Handle drop on empty editor area
+const handleDrop = (e: DragEvent) => {
+  const target = e.target as HTMLElement
+  
+  // Only handle if dropped on editor-wrapper or blocks-list directly
+  if (target === editorWrapper.value || target === blocksList.value) {
+    e.preventDefault()
+    
+    const blockId = e.dataTransfer?.getData('text/plain')
+    if (!blockId) return
+    
+    // Find and remove the block from its current position
+    const removeBlock = (blockList: Block[]): Block | null => {
+      for (let i = 0; i < blockList.length; i++) {
+        if (blockList[i].id === blockId) {
+          return blockList.splice(i, 1)[0]
+        }
+        if (blockList[i].children) {
+          for (const col of blockList[i].children!) {
+            if (col.children) {
+              const found = removeBlock(col.children)
+              if (found) return found
+            }
+          }
+        }
+      }
+      return null
+    }
+    
+    const movedBlock = removeBlock(blocks.value)
+    if (movedBlock) {
+      // Add to end of blocks list
+      blocks.value.push(movedBlock)
+    }
+  }
+}
+
 const handleEnter = (event: { afterText: string } | Event, blockId?: string, parentId?: string) => {
   // Handle both old Event signature and new object signature
   const afterText = typeof event === 'object' && 'afterText' in event ? event.afterText : ''
@@ -644,11 +808,85 @@ const handleBackspace = (blockId: string, parentId?: string) => {
             (editables[prevIndex] as HTMLElement).focus()
           }
         })
-      } else if (list.length === 1 && blocks.value.length > 1) {
-        // If this is the only block in a nested list but there are other root blocks
-        list.splice(index, 1)
+      } else if (list.length === 1) {
+        // Check if this block is inside a column layout
+        if (parentId) {
+          // Find the parent column block
+          const parentPath = findBlockPath(parentId, blocks.value)
+          if (parentPath) {
+            const parentInfo = parentPath[parentPath.length - 1]
+            const parentBlock = parentInfo.list[parentInfo.index]
+            
+            // Check if parent has a grandparent column-layout
+            if (parentPath.length >= 2) {
+              const grandparentInfo = parentPath[parentPath.length - 2]
+              const columnLayout = grandparentInfo.list[grandparentInfo.index]
+              
+              if (columnLayout.type === 'column-layout' && columnLayout.children) {
+                // Find other columns with content
+                const otherColumns = columnLayout.children.filter(col => 
+                  col.id !== parentId && col.children && col.children.length > 0
+                )
+                
+                if (otherColumns.length > 0) {
+                  // Move a block from another column to fill the empty space
+                  const sourceColumn = otherColumns[0]
+                  if (sourceColumn.children && sourceColumn.children.length > 0) {
+                    const movedBlock = sourceColumn.children.pop()
+                    if (movedBlock) {
+                      // Replace the empty block with the moved block
+                      list.splice(index, 1, movedBlock)
+                      
+                      // If source column is now empty, remove the entire column layout
+                      // and keep remaining blocks at root level
+                      cleanupEmptyColumnLayout(columnLayout, grandparentInfo)
+                    }
+                  }
+                } else {
+                  // All columns empty or this is the last one - remove entire column layout
+                  list.splice(index, 1)
+                  cleanupEmptyColumnLayout(columnLayout, grandparentInfo)
+                }
+              }
+            }
+          }
+        } else if (blocks.value.length > 1) {
+          // If this is the only block in a nested list but there are other root blocks
+          list.splice(index, 1)
+        }
       }
       // If it's the last block in the editor, keep it but don't delete
+    }
+  }
+}
+
+// Helper function to cleanup empty column layouts
+const cleanupEmptyColumnLayout = (columnLayout: Block, parentInfo: { list: Block[], index: number }) => {
+  if (!columnLayout.children) return
+  
+  // Check if all columns are empty
+  const allEmpty = columnLayout.children.every(col => 
+    !col.children || col.children.length === 0
+  )
+  
+  if (allEmpty) {
+    // Remove the entire column layout
+    parentInfo.list.splice(parentInfo.index, 1)
+    
+    // Ensure there's at least one block
+    if (blocks.value.length === 0) {
+      addBlock('paragraph')
+    }
+  } else {
+    // Check if only one column has content
+    const nonEmptyColumns = columnLayout.children.filter(col => 
+      col.children && col.children.length > 0
+    )
+    
+    if (nonEmptyColumns.length === 1) {
+      // Flatten: move all blocks from the single column to root level
+      const remainingBlocks = nonEmptyColumns[0].children || []
+      parentInfo.list.splice(parentInfo.index, 1, ...remainingBlocks)
     }
   }
 }
@@ -986,36 +1224,34 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
 
 <style scoped>
 /* ===================================
-   MARKDOWN EDITOR - Refined Design
+   MARKDOWN EDITOR - NYT Editorial Style
    =================================== */
 
-/* CSS Variables for consistency */
+/* CSS Variables - NYT inspired */
 .markdown-editor-container {
   --editor-bg: #ffffff;
-  --editor-bg-secondary: #f8fafc;
-  --editor-border: #e2e8f0;
-  --editor-border-hover: #cbd5e1;
-  --editor-text: #1e293b;
-  --editor-text-secondary: #64748b;
-  --editor-text-muted: #94a3b8;
-  --editor-accent: #3b82f6;
-  --editor-accent-hover: #2563eb;
-  --editor-radius-sm: 6px;
-  --editor-radius-md: 8px;
-  --editor-radius-lg: 12px;
-  --editor-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --editor-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --editor-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
-  --editor-transition: 0.15s ease;
+  --editor-bg-secondary: #ffffff;
+  --editor-border: #e5e5e5;
+  --editor-border-light: #f0f0f0;
+  --editor-text: #121212;
+  --editor-text-secondary: #5a5a5a;
+  --editor-text-muted: #999999;
+  --editor-accent: #121212;
+  --editor-link: #326891;
+  --editor-radius-sm: 2px;
+  --editor-radius-md: 3px;
+  --editor-radius-lg: 4px;
+  --editor-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --editor-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.12);
+  --editor-transition: 0.2s ease;
+  --editor-font-serif: 'NanumSquare_ac', 'Georgia', 'Times New Roman', serif;
+  --editor-font-sans: 'Helvetica', 'Helvetica Neue', 'NanumSquare_ac', 'Arial', sans-serif;
   
   display: flex;
   flex-direction: column;
-  height: 100%;
   background: var(--editor-bg);
   position: relative;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
-  border-radius: var(--editor-radius-lg);
-  overflow: hidden;
+  font-family: var(--editor-font-serif);
   border: 1px solid var(--editor-border);
 }
 
@@ -1024,35 +1260,35 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
    =================================== */
 .view-toggle {
   display: flex;
-  gap: 4px;
-  padding: 10px 16px;
-  background: var(--editor-bg-secondary);
+  gap: 2px;
+  padding: 8px 16px;
+  background: #fafafa;
   border-bottom: 1px solid var(--editor-border);
 }
 
 .toggle-btn {
-  padding: 8px 18px;
-  background: var(--editor-bg);
-  border: 1px solid var(--editor-border);
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: var(--editor-radius-sm);
-  font-size: 13px;
+  font-family: var(--editor-font-sans);
+  font-size: 12px;
   font-weight: 500;
-  color: var(--editor-text-secondary);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--editor-text-muted);
   cursor: pointer;
   transition: all var(--editor-transition);
 }
 
 .toggle-btn:hover {
-  background: var(--editor-bg);
-  border-color: var(--editor-border-hover);
   color: var(--editor-text);
 }
 
 .toggle-btn.active {
   background: var(--editor-text);
-  color: var(--editor-bg);
+  color: #ffffff;
   border-color: var(--editor-text);
-  box-shadow: var(--editor-shadow-sm);
 }
 
 /* ===================================
@@ -1061,8 +1297,6 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
 .editor-main {
   display: flex;
   flex: 1;
-  overflow: hidden;
-  min-height: 0;
 }
 
 .editor-main.editor .editor-panel {
@@ -1086,21 +1320,26 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
 .editor-panel {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   border-right: 1px solid var(--editor-border);
   background: var(--editor-bg);
 }
 
 /* ===================================
-   Toolbar
+   Toolbar - Minimal NYT Style
    =================================== */
 .editor-toolbar {
   display: flex;
-  gap: 2px;
-  padding: 10px 14px;
+  gap: 0;
+  padding: 6px 16px;
   border-bottom: 1px solid var(--editor-border);
   background: var(--editor-bg);
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.toolbar-group {
+  display: flex;
+  gap: 0;
   align-items: center;
 }
 
@@ -1112,34 +1351,59 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
   justify-content: center;
   background: transparent;
   border: none;
-  border-radius: var(--editor-radius-sm);
   cursor: pointer;
   color: var(--editor-text-secondary);
-  font-size: 14px;
-  font-weight: 500;
+  font-family: var(--editor-font-sans);
+  font-size: 13px;
+  font-weight: 600;
   transition: all var(--editor-transition);
   padding: 0 8px;
 }
 
 .toolbar-btn:hover {
-  background: var(--editor-bg-secondary);
   color: var(--editor-text);
+  background: #f5f5f5;
 }
 
 .toolbar-btn:active {
-  background: var(--editor-border);
-  transform: scale(0.96);
+  background: #ebebeb;
+}
+
+.toolbar-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.toolbar-italic {
+  font-style: italic;
+  font-family: var(--editor-font-serif);
 }
 
 .toolbar-strikethrough {
   text-decoration: line-through;
 }
 
+.toolbar-code {
+  font-family: 'Menlo', 'Monaco', monospace;
+  font-size: 11px;
+}
+
+.toolbar-add {
+  color: var(--editor-text-muted);
+  border-left: 1px solid var(--editor-border);
+  margin-left: 4px;
+  padding-left: 12px;
+}
+
+.toolbar-add:hover {
+  color: var(--editor-text);
+}
+
 .toolbar-divider {
   width: 1px;
   height: 20px;
   background: var(--editor-border);
-  margin: 0 6px;
+  margin: 0 12px;
   align-self: center;
 }
 
@@ -1150,28 +1414,30 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--editor-bg-secondary);
+  background: var(--editor-bg);
 }
 
 .preview-header {
-  padding: 10px 16px;
-  background: var(--editor-bg);
+  padding: 8px 16px;
+  background: #fafafa;
   border-bottom: 1px solid var(--editor-border);
-  font-size: 13px;
+  font-family: var(--editor-font-sans);
+  font-size: 11px;
   font-weight: 600;
-  color: var(--editor-text-secondary);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--editor-text-muted);
 }
 
 .preview-content {
   flex: 1;
   overflow-y: auto;
-  padding: 32px;
+  padding: 40px 48px;
   background: var(--editor-bg);
 }
 
 .preview-content::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .preview-content::-webkit-scrollbar-track {
@@ -1179,27 +1445,29 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
 }
 
 .preview-content::-webkit-scrollbar-thumb {
-  background: var(--editor-border);
-  border-radius: 3px;
+  background: #ddd;
+  border-radius: 2px;
 }
 
 .preview-content::-webkit-scrollbar-thumb:hover {
-  background: var(--editor-border-hover);
+  background: #ccc;
 }
 
 /* ===================================
    Editor Wrapper
    =================================== */
 .editor-wrapper {
-  flex: 1;
-  overflow-y: auto;
-  padding: 24px;
+  padding: 40px 48px;
   position: relative;
   background: var(--editor-bg);
+  cursor: text;
+  min-height: 400px;
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
 .editor-wrapper::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .editor-wrapper::-webkit-scrollbar-track {
@@ -1207,12 +1475,12 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
 }
 
 .editor-wrapper::-webkit-scrollbar-thumb {
-  background: var(--editor-border);
-  border-radius: 3px;
+  background: #ddd;
+  border-radius: 2px;
 }
 
 .editor-wrapper::-webkit-scrollbar-thumb:hover {
-  background: var(--editor-border-hover);
+  background: #ccc;
 }
 
 /* ===================================
@@ -1221,10 +1489,12 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
 .blocks-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
   margin: 0;
   width: 100%;
   max-width: 100%;
+  min-height: 100%;
+  padding-bottom: 200px;
 }
 
 .blocks-list > :deep(*) {
@@ -1233,59 +1503,57 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
 }
 
 /* ===================================
-   Typography Styles
+   Typography Styles - NYT Editorial
    =================================== */
 .heading-1 { 
-  font-size: 2.25em; 
+  font-family: var(--editor-font-serif);
+  font-size: 2.5rem; 
   font-weight: 700; 
-  margin-top: 0.6em;
-  margin-bottom: 0.3em;
-  line-height: 1.2;
+  margin-top: 0;
+  margin-bottom: 0.5em;
+  line-height: 1.1;
   color: var(--editor-text);
   letter-spacing: -0.02em;
 }
 
 .heading-2 { 
-  font-size: 1.75em; 
-  font-weight: 600; 
-  margin-top: 0.6em;
-  margin-bottom: 0.3em;
-  line-height: 1.3;
+  font-family: var(--editor-font-serif);
+  font-size: 1.875rem; 
+  font-weight: 700; 
+  margin-top: 1.5em;
+  margin-bottom: 0.4em;
+  line-height: 1.2;
   color: var(--editor-text);
   letter-spacing: -0.01em;
 }
 
 .heading-3 { 
-  font-size: 1.375em; 
-  font-weight: 600; 
-  margin-top: 0.6em;
-  margin-bottom: 0.3em;
-  line-height: 1.4;
+  font-family: var(--editor-font-serif);
+  font-size: 1.5rem; 
+  font-weight: 700; 
+  margin-top: 1.2em;
+  margin-bottom: 0.4em;
+  line-height: 1.3;
   color: var(--editor-text);
 }
 
 .heading-4 {
-  font-size: 1.125em;
-  font-weight: 600;
-  margin-top: 0.6em;
+  font-family: var(--editor-font-sans);
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-top: 1em;
   margin-bottom: 0.3em;
   line-height: 1.4;
   color: var(--editor-text);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .heading-5 {
-  font-size: 1em;
-  font-weight: 600;
-  margin-top: 0.6em;
-  margin-bottom: 0.3em;
-  line-height: 1.4;
-  color: var(--editor-text-secondary);
-}
-
-.heading-6 {
-  font-size: 0.875em;
-  font-weight: 600;
-  margin-top: 0.6em;
+  font-family: var(--editor-font-sans);
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-top: 1em;
   margin-bottom: 0.3em;
   line-height: 1.4;
   color: var(--editor-text-secondary);
@@ -1293,120 +1561,141 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
   letter-spacing: 0.05em;
 }
 
+.heading-6 {
+  font-family: var(--editor-font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 1em;
+  margin-bottom: 0.3em;
+  line-height: 1.4;
+  color: var(--editor-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .paragraph { 
-  font-size: 16px; 
-  line-height: 1.75;
+  font-family: var(--editor-font-serif);
+  font-size: 1.125rem; 
+  line-height: 1.8;
   color: var(--editor-text);
+  margin-bottom: 1em;
 }
 
 /* ===================================
-   Special Blocks
+   Special Blocks - NYT Style
    =================================== */
 .callout { 
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  padding: 16px 20px;
-  border-radius: var(--editor-radius-md);
-  border-left: 3px solid var(--editor-accent);
-  box-shadow: var(--editor-shadow-sm);
+  font-family: var(--editor-font-sans);
+  background: #f7f7f7;
+  padding: 20px 24px;
+  border-left: 3px solid var(--editor-text);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 1.5em 0;
 }
 
 .quote {
-  font-size: 1.05em;
+  font-family: var(--editor-font-serif);
+  font-size: 1.375rem;
   font-style: italic;
-  color: var(--editor-text-secondary);
-  border-left: 3px solid var(--editor-border-hover);
-  padding-left: 20px;
-  margin: 12px 0;
+  color: var(--editor-text);
+  border-left: 3px solid var(--editor-text);
+  padding-left: 24px;
+  margin: 1.5em 0;
+  line-height: 1.5;
 }
 
 .code {
-  font-family: 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 14px;
-  background: #1e293b;
-  color: #e2e8f0;
-  padding: 16px 20px;
-  border-radius: var(--editor-radius-md);
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 0.875rem;
+  background: #f7f7f7;
+  color: var(--editor-text);
+  padding: 20px 24px;
+  border: 1px solid var(--editor-border);
   overflow-x: auto;
   white-space: pre-wrap;
   line-height: 1.6;
+  margin: 1em 0;
 }
 
 .bulleted-list,
 .numbered-list {
-  font-size: 16px;
-  line-height: 1.75;
+  font-family: var(--editor-font-serif);
+  font-size: 1.125rem;
+  line-height: 1.8;
   color: var(--editor-text);
-  padding-left: 8px;
+  padding-left: 12px;
 }
 
 .bulleted-list::before {
   content: '•';
-  margin-right: 10px;
-  color: var(--editor-accent);
-  font-weight: 600;
+  margin-right: 12px;
+  color: var(--editor-text);
 }
 
 .numbered-list::before {
   content: '1.';
-  margin-right: 10px;
-  color: var(--editor-accent);
-  font-weight: 600;
+  margin-right: 12px;
+  color: var(--editor-text);
 }
 
 .todo {
-  font-size: 16px;
-  line-height: 1.75;
+  font-family: var(--editor-font-sans);
+  font-size: 1rem;
+  line-height: 1.6;
   color: var(--editor-text);
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
 }
 
 .todo::before {
   content: '☐';
-  font-size: 18px;
-  color: var(--editor-border-hover);
+  font-size: 1.125rem;
+  color: var(--editor-text-muted);
 }
 
 .divider {
   border: none;
   border-top: 1px solid var(--editor-border);
-  margin: 28px 0;
+  margin: 2em 0;
   height: 0;
   min-height: 0;
 }
 
 .image {
   max-width: 100%;
-  border-radius: var(--editor-radius-md);
-  background: var(--editor-bg-secondary);
-  padding: 12px;
+  background: #f7f7f7;
+  padding: 16px;
   text-align: center;
   color: var(--editor-text-muted);
+  font-family: var(--editor-font-sans);
+  font-size: 0.875rem;
   font-style: italic;
-  border: 1px dashed var(--editor-border);
+  border: 1px solid var(--editor-border);
+  margin: 1.5em 0;
 }
 
 .table {
-  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
-  font-size: 13px;
+  font-family: 'Menlo', 'Monaco', monospace;
+  font-size: 0.8125rem;
   white-space: pre;
-  background: var(--editor-bg-secondary);
-  padding: 14px;
-  border-radius: var(--editor-radius-md);
+  background: #f7f7f7;
+  padding: 16px;
   border: 1px solid var(--editor-border);
   overflow-x: auto;
+  margin: 1em 0;
 }
 
 /* ===================================
-   Layout Blocks
+   Layout Blocks - Clean Style
    =================================== */
 .block-row {
   display: flex;
-  gap: 20px;
+  gap: 24px;
   width: 100%;
   align-items: flex-start;
-  margin: 12px 0;
+  margin: 1em 0;
 }
 
 .block-column {
@@ -1414,24 +1703,23 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 16px;
-  border: 1px solid transparent;
-  border-radius: var(--editor-radius-md);
+  gap: 0;
+  padding: 0;
+  border: none;
   transition: all var(--editor-transition);
   position: relative;
-  background: var(--editor-bg-secondary);
+  background: transparent;
 }
 
 .block-column:hover {
-  border-color: var(--editor-border);
-  background: var(--editor-bg);
+  border-color: transparent;
+  background: transparent;
 }
 
 .column-content {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
   min-height: 40px;
 }
 
@@ -1441,83 +1729,85 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
   align-items: center;
   justify-content: center;
   color: var(--editor-text-muted);
-  font-size: 13px;
-  border: 2px dashed var(--editor-border);
-  border-radius: var(--editor-radius-sm);
+  font-family: var(--editor-font-sans);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px dashed var(--editor-border);
   margin-top: 8px;
   transition: all var(--editor-transition);
-  background: var(--editor-bg-secondary);
+  background: transparent;
 }
 
 .empty-column-drop-zone:hover {
-  border-color: var(--editor-accent);
-  background: #eff6ff;
-  color: var(--editor-accent);
+  border-color: var(--editor-text);
+  color: var(--editor-text);
+  background: #fafafa;
 }
 
 .empty-editor {
-  padding: 60px 20px;
+  padding: 80px 20px;
   color: var(--editor-text-muted);
   cursor: text;
   text-align: center;
-  font-size: 15px;
+  font-family: var(--editor-font-serif);
+  font-size: 1.125rem;
+  font-style: italic;
 }
 
 /* ===================================
-   Menus (Slash & Settings)
+   Menus - NYT Style
    =================================== */
 .slash-menu,
 .settings-menu {
   position: absolute;
   z-index: 100;
-  width: 300px;
+  width: 280px;
   background: var(--editor-bg);
   border: 1px solid var(--editor-border);
-  border-radius: var(--editor-radius-lg);
-  box-shadow: var(--editor-shadow-lg);
+  box-shadow: var(--editor-shadow-md);
   max-height: 360px;
   overflow-y: auto;
-  padding: 8px;
+  padding: 6px;
 }
 
 .menu-header {
-  padding: 10px 14px 6px;
-  font-size: 11px;
+  padding: 8px 12px 4px;
+  font-family: var(--editor-font-sans);
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   color: var(--editor-text-muted);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   width: 100%;
-  padding: 10px 14px;
+  padding: 8px 12px;
   border: none;
   background: transparent;
   text-align: left;
   cursor: pointer;
-  border-radius: var(--editor-radius-sm);
   transition: all var(--editor-transition);
 }
 
 .menu-item:hover, 
 .menu-item.active {
-  background: var(--editor-bg-secondary);
+  background: #f5f5f5;
 }
 
 .menu-icon {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--editor-bg-secondary);
+  background: #f7f7f7;
   border: 1px solid var(--editor-border);
-  border-radius: var(--editor-radius-sm);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--editor-text);
   flex-shrink: 0;
@@ -1526,18 +1816,20 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
 .menu-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .menu-label { 
-  font-size: 14px; 
+  font-family: var(--editor-font-sans);
+  font-size: 13px; 
   font-weight: 500;
   color: var(--editor-text);
   line-height: 1.3;
 }
 
 .menu-desc { 
-  font-size: 12px; 
+  font-family: var(--editor-font-sans);
+  font-size: 11px; 
   color: var(--editor-text-muted);
   line-height: 1.3;
 }

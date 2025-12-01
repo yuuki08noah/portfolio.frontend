@@ -741,8 +741,8 @@ onMounted(loadProfile)
 }
 
 .btn-text-add:hover {
-  background: #111;
-  color: #fff;
+  background: #f5f5f5;
+  color: #111;
 }
 
 .skills-list {
@@ -826,8 +826,8 @@ onMounted(loadProfile)
 }
 
 .btn-border:hover {
-  background: #111;
-  color: #fff;
+  background: #f5f5f5;
+  color: #111;
 }
 
 .btn-border.danger {

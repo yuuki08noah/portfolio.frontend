@@ -13,7 +13,8 @@
 import BlogStats from '~/components/blog/BlogStats.vue'
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
+  ssr: true
 })
 
 const { fetchPosts, fetchCategories } = useBlog()

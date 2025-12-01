@@ -2,12 +2,23 @@
   <aside class="sidebar-right">
     <div class="sidebar-widget">
       <h3 class="widget-title">Popular</h3>
-      <ul class="trending-list">
-        <li v-for="(project, index) in trendingProjects" :key="index">
+      <!-- Loading Skeleton -->
+      <ul v-if="loading" class="trending-list">
+        <li v-for="i in 3" :key="i">
+          <div class="skeleton skeleton-rank"></div>
+          <div class="project-info">
+            <div class="skeleton skeleton-link"></div>
+            <div class="skeleton skeleton-meta"></div>
+          </div>
+        </li>
+      </ul>
+      <!-- Loaded Content -->
+      <ul v-else class="trending-list">
+        <li v-for="(project, index) in displayProjects" :key="project.id || index">
           <span class="rank">{{ index + 1 }}</span>
           <div class="project-info">
-            <a href="#" class="project-link">{{ project.title }}</a>
-            <span class="project-meta">{{ project.category }}</span>
+            <NuxtLink :to="`/projects/${project.slug}`" class="project-link">{{ project.title }}</NuxtLink>
+            <span class="project-meta">{{ project.category || 'Project' }}</span>
           </div>
         </li>
       </ul>
@@ -25,11 +36,29 @@
 </template>
 
 <script setup lang="ts">
-const trendingProjects = [
-  { title: 'E-Commerce Platform', category: 'Full Stack' },
-  { title: 'Travel Blog System', category: 'Frontend' },
-  { title: 'AI Tool', category: 'Innovation' },
+import { computed } from 'vue'
+
+interface Project {
+  id?: number
+  title: string
+  slug?: string
+  category?: string
+}
+
+const props = defineProps<{
+  projects?: Project[]
+  loading?: boolean
+}>()
+
+const defaultProjects: Project[] = [
+  { title: 'E-Commerce Platform', slug: 'e-commerce-platform', category: 'Full Stack' },
+  { title: 'Travel Blog System', slug: 'travel-blog-system', category: 'Frontend' },
+  { title: 'AI Tool', slug: 'ai-tool', category: 'Innovation' },
 ]
+
+const displayProjects = computed(() => {
+  return props.projects?.length ? props.projects : defaultProjects
+})
 </script>
 
 <style scoped>
@@ -158,5 +187,39 @@ const trendingProjects = [
 .btn-subscribe:hover {
   background: var(--color-white);
   color: var(--color-black);
+}
+
+/* Skeleton Loading Styles */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-rank {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.skeleton-link {
+  width: 120px;
+  height: 16px;
+  margin-bottom: 4px;
+}
+
+.skeleton-meta {
+  width: 60px;
+  height: 10px;
 }
 </style>

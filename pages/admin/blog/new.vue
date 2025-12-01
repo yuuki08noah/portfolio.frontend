@@ -141,7 +141,8 @@ import MarkdownEditor from '~/components/admin/MarkdownEditor.vue'
 
 definePageMeta({
   middleware: ['admin'],
-  layout: false
+  layout: false,
+  ssr: true
 })
 
 const { createBlogPost } = useBlogPosts()

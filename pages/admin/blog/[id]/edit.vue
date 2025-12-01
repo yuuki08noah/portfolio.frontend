@@ -239,7 +239,7 @@ const loadPost = async () => {
       }
     }
 
-    const response = await fetchBlogPost(postId.value)
+    const response = await fetchBlogPost(postId.value, true)
     const post = response.post
 
     form.value = {

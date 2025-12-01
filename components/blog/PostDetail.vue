@@ -1,69 +1,78 @@
 <template>
-  <article class="post-detail">
-    <!-- Cover Image -->
-    <div v-if="post.cover_image" class="cover-wrapper">
-      <img :src="post.cover_image" :alt="post.title" class="cover" />
+  <div class="post-detail-container">
+    <!-- Left Column: Article Content -->
+    <div class="content-column">
+      <article class="post-detail">
+        <!-- Cover Image -->
+        <div v-if="post.cover_image" class="cover-wrapper">
+          <img :src="post.cover_image" :alt="post.title" class="cover" />
+        </div>
+        
+        <!-- Article Header -->
+        <header class="article-header">
+          <div class="article-meta-top">
+            <span v-if="post.category" class="category">{{ post.category }}</span>
+          </div>
+          
+          <h1 class="article-title">{{ post.title }}</h1>
+          
+          <p v-if="post.subtitle" class="article-subtitle">{{ post.subtitle }}</p>
+          
+          <div class="article-meta">
+            <div class="meta-left">
+              <span class="date">{{ formatDate(post.published_at || post.created_at) }}</span>
+              <span class="separator">·</span>
+              <span class="reading-time">{{ readingTime }} min read</span>
+            </div>
+            <div class="meta-right">
+              <span class="views">{{ post.views || 0 }} views</span>
+            </div>
+          </div>
+          
+          <div class="header-divider"></div>
+        </header>
+        
+        <!-- Article Content -->
+        <div class="article-content">
+          <MarkdownRenderer :content="post.content" />
+        </div>
+        
+        <!-- Article Footer -->
+        <footer class="article-footer">
+          <div class="footer-divider"></div>
+          
+          <div class="tags-section" v-if="post.tags?.length">
+            <span class="tags-label">Tags</span>
+            <div class="tags">
+              <NuxtLink
+                v-for="tag in post.tags"
+                :key="tag"
+                :to="`/blog/tag/${tag}`"
+                class="tag"
+              >
+                {{ tag }}
+              </NuxtLink>
+            </div>
+          </div>
+          
+          <div class="share-section">
+            <span class="share-label">Share this article</span>
+            <ShareButtons :title="post.title" :url="currentUrl" />
+          </div>
+        </footer>
+      </article>
     </div>
-    
-    <!-- Article Header -->
-    <header class="article-header">
-      <div class="article-meta-top">
-        <span v-if="post.category" class="category">{{ post.category }}</span>
-      </div>
-      
-      <h1 class="article-title">{{ post.title }}</h1>
-      
-      <p v-if="post.subtitle" class="article-subtitle">{{ post.subtitle }}</p>
-      
-      <div class="article-meta">
-        <div class="meta-left">
-          <span class="date">{{ formatDate(post.published_at || post.created_at) }}</span>
-          <span class="separator">·</span>
-          <span class="reading-time">{{ readingTime }} min read</span>
-        </div>
-        <div class="meta-right">
-          <span class="views">{{ post.views || 0 }} views</span>
-        </div>
-      </div>
-      
-      <div class="header-divider"></div>
-    </header>
-    
-    <!-- Article Content -->
-    <div class="article-content">
-      <MarkdownRenderer :content="post.content" />
-    </div>
-    
-    <!-- Article Footer -->
-    <footer class="article-footer">
-      <div class="footer-divider"></div>
-      
-      <div class="tags-section" v-if="post.tags?.length">
-        <span class="tags-label">Tags</span>
-        <div class="tags">
-          <NuxtLink
-            v-for="tag in post.tags"
-            :key="tag"
-            :to="`/blog/tag/${tag}`"
-            class="tag"
-          >
-            {{ tag }}
-          </NuxtLink>
-        </div>
-      </div>
-      
-      <div class="share-section">
-        <span class="share-label">Share this article</span>
-        <ShareButtons :title="post.title" :url="currentUrl" />
-      </div>
-    </footer>
 
-    <!-- Comments Section -->
-    <CommentThread
-      commentable-type="BlogPost"
-      :commentable-id="post.id"
-    />
-  </article>
+    <!-- Right Column: Comments (Sticky) -->
+    <aside class="comments-column">
+      <div class="comments-sticky">
+        <CommentThread
+          commentable-type="BlogPost"
+          :commentable-id="post.id"
+        />
+      </div>
+    </aside>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -96,16 +105,80 @@ const formatDate = (date: string) => {
 </script>
 
 <style scoped>
+/* Two Column Layout */
+.post-detail-container {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 60px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-xl);
+  min-height: 100vh;
+}
+
+/* Left Column - Article Content */
+.content-column {
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
+  padding-right: 20px;
+}
+
+.content-column::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content-column::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content-column::-webkit-scrollbar-thumb {
+  background: #e0e0e0;
+  border-radius: 3px;
+}
+
+.content-column::-webkit-scrollbar-thumb:hover {
+  background: #ccc;
+}
+
 .post-detail {
   max-width: 720px;
-  margin: 0 auto;
-  padding: 0 24px;
+}
+
+/* Right Column - Comments */
+.comments-column {
+  position: sticky;
+  top: 100px;
+  height: calc(100vh - 120px);
+  overflow-y: auto;
+  padding-left: 20px;
+  border-left: 1px solid #e0e0e0;
+}
+
+.comments-column::-webkit-scrollbar {
+  width: 6px;
+}
+
+.comments-column::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.comments-column::-webkit-scrollbar-thumb {
+  background: #e0e0e0;
+  border-radius: 3px;
+}
+
+.comments-column::-webkit-scrollbar-thumb:hover {
+  background: #ccc;
+}
+
+.comments-sticky {
+  padding-bottom: 40px;
 }
 
 /* Cover Image */
 .cover-wrapper {
-  margin: 0 -24px 48px;
-  max-width: calc(100% + 48px);
+  margin: 0 0 48px;
+  max-width: 100%;
 }
 
 .cover {
@@ -342,14 +415,40 @@ const formatDate = (date: string) => {
 }
 
 /* Responsive */
+@media (max-width: 1200px) {
+  .post-detail-container {
+    grid-template-columns: 1fr 360px;
+    gap: 40px;
+  }
+}
+
+@media (max-width: 900px) {
+  .post-detail-container {
+    grid-template-columns: 1fr;
+    gap: 60px;
+  }
+
+  .content-column {
+    max-height: none;
+    overflow-y: visible;
+    padding-right: 0;
+  }
+
+  .comments-column {
+    position: relative;
+    top: 0;
+    height: auto;
+    overflow-y: visible;
+    padding-left: 0;
+    border-left: none;
+    border-top: 2px solid #e0e0e0;
+    padding-top: 40px;
+  }
+}
+
 @media (max-width: 768px) {
   .post-detail {
-    padding: 0 16px;
-  }
-  
-  .cover-wrapper {
-    margin: 0 -16px 32px;
-    max-width: calc(100% + 32px);
+    padding: 0;
   }
   
   .article-title {

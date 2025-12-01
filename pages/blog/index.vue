@@ -8,9 +8,11 @@
             <div class="hero-divider"></div>
             <p class="page-subtitle">Thoughts, insights, and stories from my journey.</p>
           </div>
-          <NuxtLink v-if="isAdmin()" to="/blog/write" class="btn-write-post">
-            + Write Post
-          </NuxtLink>
+          <ClientOnly>
+            <NuxtLink v-if="isAdmin()" to="/blog/write" class="btn-write-post">
+              + Write Post
+            </NuxtLink>
+          </ClientOnly>
         </div>
       </div>
     </section>
@@ -66,24 +68,44 @@ const { fetchPosts, fetchCategories, fetchTags } = useBlog()
 const { fetchProjects, fetchProjectDocs } = useProjects()
 const { isAdmin } = useAuth()
 
-const { data: posts } = await useAsyncData('blog-posts', async () => {
-  const res = await fetchPosts()
-  return res.data
+const { data: posts, error: postsError } = await useAsyncData('blog-posts', async () => {
+  try {
+    const res = await fetchPosts()
+    return res.data || []
+  } catch (e) {
+    console.error('Failed to fetch posts:', e)
+    return []
+  }
 })
 
 const { data: categories } = await useAsyncData('blog-categories', async () => {
-  const res = await fetchCategories()
-  return res.data
+  try {
+    const res = await fetchCategories()
+    return res.data || []
+  } catch (e) {
+    console.error('Failed to fetch categories:', e)
+    return []
+  }
 })
 
 const { data: tags } = await useAsyncData('blog-tags', async () => {
-  const res = await fetchTags()
-  return res.data
+  try {
+    const res = await fetchTags()
+    return res.data || []
+  } catch (e) {
+    console.error('Failed to fetch tags:', e)
+    return []
+  }
 })
 
 const { data: projects } = await useAsyncData('projects', async () => {
-  const res = await fetchProjects()
-  return res.projects || []
+  try {
+    const res = await fetchProjects()
+    return res.projects || []
+  } catch (e) {
+    console.error('Failed to fetch projects:', e)
+    return []
+  }
 })
 </script>
 

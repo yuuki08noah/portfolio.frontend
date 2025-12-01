@@ -22,14 +22,14 @@
 
 <script setup lang="ts">
 const props = defineProps<{
-  docId: string
+  docId: string | number
   compact?: boolean
 }>()
 
 const { getVelogStats } = useVelogIntegration()
 
 const { data: stats } = await useAsyncData(`velog-stats-${props.docId}`, () =>
-  getVelogStats(props.docId).then(res => res.data)
+  getVelogStats(String(props.docId)).then(res => res.data)
 )
 
 const formatDate = (date: string) => {

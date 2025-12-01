@@ -74,6 +74,7 @@ const props = defineProps<{
 const emit = defineEmits(['replied', 'updated', 'deleted'])
 
 const { isAuthenticated } = useAuth()
+const { $api } = useApi()
 
 const showReplyForm = ref(false)
 const isEditing = ref(false)
@@ -97,8 +98,8 @@ const toggleEdit = () => {
 const saveEdit = async () => {
   saving.value = true
   try {
-    await $fetch(`/api/v1/comments/${props.comment.id}`, {
-      method: 'PATCH',
+    await $api(`/comments/${props.comment.id}`, {
+      method: 'PUT',
       body: { content: editContent.value }
     })
     isEditing.value = false
@@ -119,7 +120,7 @@ const handleDelete = async () => {
   if (!confirm('Are you sure you want to delete this comment?')) return
   
   try {
-    await $fetch(`/api/v1/comments/${props.comment.id}`, {
+    await $api(`/comments/${props.comment.id}`, {
       method: 'DELETE'
     })
     emit('deleted')

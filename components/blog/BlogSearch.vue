@@ -15,6 +15,7 @@
 
 <script setup lang="ts">
 import type { BlogPost } from '~/types'
+import PostCard from '~/components/blog/PostCard.vue'
 
 const query = ref('')
 const results = ref<BlogPost[]>([])

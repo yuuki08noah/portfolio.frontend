@@ -49,6 +49,7 @@ const props = defineProps<{
 
 const { isAuthenticated } = useAuth()
 const { locale } = useI18n()
+const { $api } = useApi()
 
 const comments = ref<any[]>([])
 const totalComments = ref(0)
@@ -60,12 +61,8 @@ const loadComments = async () => {
   error.value = ''
   
   try {
-    const response = await $fetch(`/api/v1/comments`, {
-      params: {
-        commentable_type: props.commentableType,
-        commentable_id: props.commentableId,
-        locale: locale.value
-      }
+    const response = await $api<any>(`/comments?commentable_type=${props.commentableType}&commentable_id=${props.commentableId}&locale=${locale.value}`, {
+      auth: false
     })
     
     comments.value = response.comments || response
@@ -88,9 +85,9 @@ onMounted(() => {
 
 <style scoped>
 .comment-section {
-  margin-top: 60px;
-  padding-top: 40px;
-  border-top: 2px solid #e0e0e0;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
 
 .comment-header {

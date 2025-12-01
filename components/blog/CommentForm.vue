@@ -24,7 +24,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   commentableType: string
   commentableId: number
   parentId?: number
@@ -32,11 +32,16 @@ const props = defineProps<{
   placeholder?: string
   submitLabel?: string
   showCancel?: boolean
-}>()
+}>(), {
+  placeholder: 'Write a comment...',
+  submitLabel: 'Post Comment',
+  showCancel: false
+})
 
 const emit = defineEmits(['submitted', 'cancel'])
 
 const { locale } = useI18n()
+const { $api } = useApi()
 
 const content = ref(props.initialContent || '')
 const submitting = ref(false)
@@ -49,7 +54,7 @@ const handleSubmit = async () => {
   error.value = ''
   
   try {
-    await $fetch('/api/v1/comments', {
+    await $api('/comments', {
       method: 'POST',
       body: {
         comment: {

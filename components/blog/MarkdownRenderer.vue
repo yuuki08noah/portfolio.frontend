@@ -1,5 +1,10 @@
 <template>
-  <div class="markdown-content" v-html="renderedMarkdown"></div>
+  <ClientOnly>
+    <div class="markdown-content" v-html="renderedMarkdown"></div>
+    <template #fallback>
+      <div class="markdown-content markdown-loading">Loading...</div>
+    </template>
+  </ClientOnly>
 </template>
 
 <script setup lang="ts">

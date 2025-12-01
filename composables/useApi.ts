@@ -59,7 +59,11 @@ export const useApi = () => {
     }
 
     const finalEndpoint = getLocalizedEndpoint(endpoint, localized)
-    const url = `${apiBase}${finalEndpoint}`
+    // Ensure endpoint starts with /api/v1 if not already
+    const normalizedEndpoint = finalEndpoint.startsWith('/api/v1') 
+      ? finalEndpoint 
+      : `/api/v1${finalEndpoint.startsWith('/') ? '' : '/'}${finalEndpoint}`
+    const url = `${apiBase}${normalizedEndpoint}`
     return await $fetch<T>(url, fetchOptions)
   }
 

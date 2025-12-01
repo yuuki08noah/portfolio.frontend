@@ -9,13 +9,15 @@
             <button @click="cycleLocale" class="lang-btn" :title="localeTitle">
               {{ localeDisplay }}
             </button>
-            <template v-if="isAuthenticated">
-              <NuxtLink to="/mypage" class="auth-link">My Page</NuxtLink>
-              <button @click="handleLogout" class="auth-btn">Logout</button>
-            </template>
-            <template v-else>
-              <NuxtLink to="/auth/signin" class="auth-btn">Login</NuxtLink>
-            </template>
+            <ClientOnly>
+              <template v-if="isAuthenticated">
+                <NuxtLink to="/mypage" class="auth-link">My Page</NuxtLink>
+                <button @click="handleLogout" class="auth-btn">Logout</button>
+              </template>
+              <template v-else>
+                <NuxtLink to="/auth/signin" class="auth-btn">Login</NuxtLink>
+              </template>
+            </ClientOnly>
           </div>
         </div>
       </div>

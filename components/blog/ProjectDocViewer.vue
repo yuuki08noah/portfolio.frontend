@@ -6,13 +6,17 @@
     
     <footer class="viewer-footer">
       <div class="footer-divider"></div>
-      <VelogStatsCard v-if="doc.velogUrl" :doc-id="doc.id" />
+      <ClientOnly>
+        <VelogStatsCard v-if="doc.velogUrl" :doc-id="doc.id" />
+      </ClientOnly>
     </footer>
   </article>
 </template>
 
 <script setup lang="ts">
 import type { ProjectDocument } from '~/types'
+import MarkdownRenderer from '~/components/blog/MarkdownRenderer.vue'
+import VelogStatsCard from '~/components/blog/VelogStatsCard.vue'
 
 defineProps<{
   projectSlug: string

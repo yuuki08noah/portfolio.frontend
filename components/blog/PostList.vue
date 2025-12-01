@@ -1,11 +1,12 @@
 <template>
   <div class="post-list">
-    <BlogPostCard v-for="post in posts" :key="post.id" :post="post" />
+    <PostCard v-for="post in posts" :key="post.id" :post="post" />
   </div>
 </template>
 
 <script setup lang="ts">
 import type { BlogPost } from '~/types'
+import PostCard from '~/components/blog/PostCard.vue'
 
 defineProps<{
   posts: BlogPost[]

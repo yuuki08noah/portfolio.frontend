@@ -73,7 +73,8 @@ import { useRouter } from 'vue-router'
 import { useTheme } from '~/composables/useTheme'
 
 definePageMeta({
-  layout: false
+  layout: false,
+  ssr: true
 })
 
 const router = useRouter()

@@ -13,7 +13,8 @@ export const useSiteSettings = () => {
     return response.json()
   }
 
-  const getSetting = (settings: SiteSetting[], key: string): string => {
+  const getSetting = (settings: SiteSetting[] | null | undefined, key: string): string => {
+    if (!settings || !Array.isArray(settings)) return ''
     const setting = settings.find(s => s.key === key)
     if (!setting) return ''
     if (locale.value === 'ko' && setting.valueKo) {

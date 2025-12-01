@@ -151,44 +151,51 @@
           
           <!-- Row Block -->
           <div v-if="block.type === 'row'" class="block-row">
-            <div 
-              v-for="(col, colIndex) in block.children" 
-              :key="col.id" 
-              class="block-column"
-              :style="{ flex: col.width ? `0 0 ${col.width}%` : '1' }"
-            >
-              <!-- Column Content -->
-              <div class="column-content">
-                <EditorBlock
-                  v-for="(childBlock, childIndex) in col.children"
-                  :key="childBlock.id"
-                  :blockId="childBlock.id"
-                  :index="childIndex"
-                  :parentId="col.id"
-                  @reorder="handleReorder"
-                >
-                  <ContentBlock
-                    v-model="childBlock.content"
-                    :class="childBlock.type"
-                    :placeholder="getPlaceholder(childBlock.type)"
-                    @enter="(e) => handleEnter(e, childBlock.id, col.id)"
-                    @backspace="handleBackspace(childBlock.id, col.id)"
-                    @slash="handleSlash($event, childBlock.id)"
-                    @double-colon="handleDoubleColon($event, childBlock.id)"
-                  />
-                </EditorBlock>
-              </div>
-
-              <!-- Empty Column Drop Zone -->
+            <template v-for="(col, colIndex) in block.children" :key="col.id">
               <div 
-                v-if="!col.children || col.children.length === 0" 
-                class="empty-column-drop-zone"
-                @dragover.prevent
-                @drop="handleDropInEmptyColumn(col.id, $event)"
+                class="block-column"
+                :style="{ flex: col.width ? `0 0 ${col.width}%` : '1' }"
               >
-                Drop here
+                <!-- Column Content -->
+                <div class="column-content">
+                  <EditorBlock
+                    v-for="(childBlock, childIndex) in col.children"
+                    :key="childBlock.id"
+                    :blockId="childBlock.id"
+                    :index="childIndex"
+                    :parentId="col.id"
+                    @reorder="handleReorder"
+                  >
+                    <ContentBlock
+                      v-model="childBlock.content"
+                      :class="childBlock.type"
+                      :placeholder="getPlaceholder(childBlock.type)"
+                      @enter="(e) => handleEnter(e, childBlock.id, col.id)"
+                      @backspace="handleBackspace(childBlock.id, col.id)"
+                      @slash="handleSlash($event, childBlock.id)"
+                      @double-colon="handleDoubleColon($event, childBlock.id)"
+                    />
+                  </EditorBlock>
+                </div>
+
+                <!-- Empty Column Drop Zone -->
+                <div 
+                  v-if="!col.children || col.children.length === 0" 
+                  class="empty-column-drop-zone"
+                  @dragover.prevent
+                  @drop="handleDropInEmptyColumn(col.id, $event)"
+                >
+                  Drop here
+                </div>
               </div>
-            </div>
+              
+              <!-- Resize Handle -->
+              <div 
+                v-if="colIndex < (block.children?.length || 0) - 1"
+                class="column-resize-handle"
+                @mousedown.prevent="startColumnResize($event, block, colIndex)"
+              ></div>
+            </template>
           </div>
 
           <!-- Standard Block -->
@@ -1250,482 +1257,280 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
   }
 }
 
+// --- Column Resizing ---
+const isResizing = ref(false)
+const resizeState = ref<{
+  block: Block
+  colIndex: number
+  startX: number
+  startWidthLeft: number
+  startWidthRight: number
+} | null>(null)
+
+const startColumnResize = (e: MouseEvent, block: Block, colIndex: number) => {
+  if (!block.children || !block.children[colIndex] || !block.children[colIndex + 1]) return
+  
+  isResizing.value = true
+  const leftCol = block.children[colIndex]
+  const rightCol = block.children[colIndex + 1]
+  
+  // Initialize widths if not set
+  if (!leftCol.width) leftCol.width = 100 / block.children.length
+  if (!rightCol.width) rightCol.width = 100 / block.children.length
+  
+  resizeState.value = {
+    block,
+    colIndex,
+    startX: e.clientX,
+    startWidthLeft: leftCol.width,
+    startWidthRight: rightCol.width
+  }
+  
+  document.addEventListener('mousemove', handleColumnResize)
+  document.addEventListener('mouseup', stopColumnResize)
+  document.body.style.cursor = 'col-resize'
+}
+
+const handleColumnResize = (e: MouseEvent) => {
+  if (!isResizing.value || !resizeState.value) return
+  
+  const { block, colIndex, startX, startWidthLeft, startWidthRight } = resizeState.value
+  
+  if (!block.children || !block.children[colIndex] || !block.children[colIndex + 1]) return
+
+  const deltaX = e.clientX - startX
+  
+  // Calculate delta percentage based on container width
+  const editorWidth = editorWrapper.value?.clientWidth || 800
+  const deltaPercent = (deltaX / editorWidth) * 100
+  
+  const leftCol = block.children[colIndex]!
+  const rightCol = block.children[colIndex + 1]!
+  
+  // Apply constraints (min 5% width)
+  let newLeftWidth = startWidthLeft + deltaPercent
+  let newRightWidth = startWidthRight - deltaPercent
+  
+  if (newLeftWidth < 5) {
+    newLeftWidth = 5
+    newRightWidth = startWidthLeft + startWidthRight - 5
+  } else if (newRightWidth < 5) {
+    newRightWidth = 5
+    newLeftWidth = startWidthLeft + startWidthRight - 5
+  }
+  
+  leftCol.width = newLeftWidth
+  rightCol.width = newRightWidth
+}
+
+const stopColumnResize = () => {
+  isResizing.value = false
+  resizeState.value = null
+  document.removeEventListener('mousemove', handleColumnResize)
+  document.removeEventListener('mouseup', stopColumnResize)
+  document.body.style.cursor = ''
+}
+
 </script>
 
 <style scoped>
-/* ===================================
-   MARKDOWN EDITOR - NYT Editorial Style
-   =================================== */
-
-/* CSS Variables - NYT inspired */
 .markdown-editor-container {
-  --editor-bg: #ffffff;
-  --editor-bg-secondary: #ffffff;
-  --editor-border: #e5e5e5;
-  --editor-border-light: #f0f0f0;
-  --editor-text: #121212;
-  --editor-text-secondary: #5a5a5a;
-  --editor-text-muted: #999999;
-  --editor-accent: #121212;
-  --editor-link: #326891;
-  --editor-radius-sm: 2px;
-  --editor-radius-md: 3px;
-  --editor-radius-lg: 4px;
-  --editor-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --editor-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.12);
-  --editor-transition: 0.2s ease;
-  --editor-font-serif: 'NanumSquare_ac', 'Georgia', 'Times New Roman', serif;
-  --editor-font-sans: 'Helvetica', 'Helvetica Neue', 'NanumSquare_ac', 'Arial', sans-serif;
-  
   display: flex;
   flex-direction: column;
-  background: var(--editor-bg);
-  position: relative;
-  font-family: var(--editor-font-serif);
-  border: 1px solid var(--editor-border);
+  height: 100%;
+  background: #ffffff;
+  font-family: 'Georgia', serif; /* Editorial feel */
+  color: #333;
 }
 
-/* ===================================
-   View Mode Toggle
-   =================================== */
+/* View Toggle */
 .view-toggle {
   display: flex;
-  gap: 2px;
-  padding: 8px 16px;
-  background: #fafafa;
-  border-bottom: 1px solid var(--editor-border);
+  justify-content: center;
+  gap: 1px;
+  background: #f0f0f0;
+  padding: 4px;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .toggle-btn {
-  padding: 6px 14px;
+  padding: 6px 16px;
+  border: none;
   background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--editor-radius-sm);
-  font-family: var(--editor-font-sans);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--editor-text-muted);
+  color: #666;
   cursor: pointer;
-  transition: all var(--editor-transition);
+  border-radius: 4px;
+  transition: all 0.2s;
 }
 
 .toggle-btn:hover {
-  color: var(--editor-text);
+  color: #111;
+  background: rgba(0,0,0,0.05);
 }
 
 .toggle-btn.active {
-  background: var(--editor-text);
-  color: #ffffff;
-  border-color: var(--editor-text);
+  background: #fff;
+  color: #111;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
-/* ===================================
-   Editor Main Layout
-   =================================== */
+/* Editor Main Area */
 .editor-main {
+  flex: 1;
   display: flex;
-  flex: 1;
-}
-
-.editor-main.editor .editor-panel {
-  flex: 1;
-  border-right: none;
+  overflow: hidden;
+  position: relative;
 }
 
 .editor-main.split .editor-panel,
 .editor-main.split .preview-panel {
-  flex: 1;
   width: 50%;
 }
 
-.editor-main.preview .preview-panel {
-  flex: 1;
+.editor-main.editor .editor-panel {
+  width: 100%;
+  max-width: 800px; /* Centered max width for writing focus */
+  margin: 0 auto;
+  border-right: 1px solid #eee; /* Subtle border */
 }
 
-/* ===================================
-   Editor Panel
-   =================================== */
+.editor-main.preview .preview-panel {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Editor Panel */
 .editor-panel {
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--editor-border);
-  background: var(--editor-bg);
+  height: 100%;
+  background: #fff;
+  border-right: 1px solid #f0f0f0;
+  position: relative;
 }
 
-/* ===================================
-   Toolbar - Minimal NYT Style
-   =================================== */
+/* Toolbar */
 .editor-toolbar {
   display: flex;
-  gap: 0;
-  padding: 6px 16px;
-  border-bottom: 1px solid var(--editor-border);
-  background: var(--editor-bg);
-  flex-wrap: wrap;
   align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-wrap: wrap;
 }
 
 .toolbar-group {
   display: flex;
-  gap: 0;
   align-items: center;
-}
-
-.toolbar-btn {
-  min-width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: var(--editor-text-secondary);
-  font-family: var(--editor-font-sans);
-  font-size: 13px;
-  font-weight: 600;
-  transition: all var(--editor-transition);
-  padding: 0 8px;
-}
-
-.toolbar-btn:hover {
-  color: var(--editor-text);
-  background: #f5f5f5;
-}
-
-.toolbar-btn:active {
-  background: #ebebeb;
-}
-
-.toolbar-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-.toolbar-italic {
-  font-style: italic;
-  font-family: var(--editor-font-serif);
-}
-
-.toolbar-strikethrough {
-  text-decoration: line-through;
-}
-
-.toolbar-code {
-  font-family: 'Menlo', 'Monaco', monospace;
-  font-size: 11px;
-}
-
-.toolbar-add {
-  color: var(--editor-text-muted);
-  border-left: 1px solid var(--editor-border);
-  margin-left: 4px;
-  padding-left: 12px;
-}
-
-.toolbar-add:hover {
-  color: var(--editor-text);
+  gap: 2px;
 }
 
 .toolbar-divider {
   width: 1px;
   height: 20px;
-  background: var(--editor-border);
-  margin: 0 12px;
-  align-self: center;
+  background: #e0e0e0;
+  margin: 0 8px;
 }
 
-/* ===================================
-   Preview Panel
-   =================================== */
-.preview-panel {
+.toolbar-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 4px;
+  color: #555;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.toolbar-btn:hover {
+  background: #f5f5f5;
+  color: #111;
+  border-color: #e0e0e0;
+}
+
+.toolbar-italic { font-style: italic; font-family: serif; }
+.toolbar-strikethrough { text-decoration: line-through; }
+.toolbar-code { font-family: monospace; font-weight: bold; }
+
+.toolbar-add {
+  margin-left: auto;
+  background: #111;
+  color: #fff;
+}
+
+.toolbar-add:hover {
+  background: #333;
+  color: #fff;
+  border-color: #333;
+}
+
+/* Editor Wrapper (Writing Area) */
+.editor-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  padding: 40px 60px; /* Generous padding */
+  cursor: text;
+}
+
+.blocks-list {
   display: flex;
   flex-direction: column;
+  gap: 16px; /* Spacing between blocks */
+  min-height: 60vh;
+}
+
+/* Empty State */
+.empty-editor {
+  color: #999;
+  font-style: italic;
+  padding: 20px;
+  text-align: center;
+  cursor: text;
+}
+
+/* Preview Panel */
+.preview-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #fafafa; /* Slightly different bg for preview */
   overflow: hidden;
-  background: var(--editor-bg);
 }
 
 .preview-header {
   padding: 8px 16px;
-  background: #fafafa;
-  border-bottom: 1px solid var(--editor-border);
-  font-family: var(--editor-font-sans);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  background: #f9f9f9;
+  border-bottom: 1px solid #eee;
+  font-size: 12px;
   text-transform: uppercase;
-  color: var(--editor-text-muted);
+  letter-spacing: 1px;
+  color: #999;
+  text-align: center;
 }
 
 .preview-content {
   flex: 1;
   overflow-y: auto;
-  padding: 40px 48px;
-  background: var(--editor-bg);
+  padding: 40px 60px;
 }
 
-.preview-content::-webkit-scrollbar {
-  width: 4px;
-}
-
-.preview-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.preview-content::-webkit-scrollbar-thumb {
-  background: #ddd;
-  border-radius: 2px;
-}
-
-.preview-content::-webkit-scrollbar-thumb:hover {
-  background: #ccc;
-}
-
-/* ===================================
-   Editor Wrapper
-   =================================== */
-.editor-wrapper {
-  padding: 40px 48px;
-  position: relative;
-  background: var(--editor-bg);
-  cursor: text;
-  min-height: 400px;
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
-.editor-wrapper::-webkit-scrollbar {
-  width: 4px;
-}
-
-.editor-wrapper::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.editor-wrapper::-webkit-scrollbar-thumb {
-  background: #ddd;
-  border-radius: 2px;
-}
-
-.editor-wrapper::-webkit-scrollbar-thumb:hover {
-  background: #ccc;
-}
-
-/* ===================================
-   Blocks List
-   =================================== */
-.blocks-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin: 0;
-  width: 100%;
-  max-width: 100%;
-  min-height: 100%;
-  padding-bottom: 200px;
-}
-
-.blocks-list > :deep(*) {
-  width: 100%;
-  max-width: 100%;
-}
-
-/* ===================================
-   Typography Styles - NYT Editorial
-   =================================== */
-.heading-1 { 
-  font-family: var(--editor-font-serif);
-  font-size: 2.5rem; 
-  font-weight: 700; 
-  margin-top: 0;
-  margin-bottom: 0.5em;
-  line-height: 1.1;
-  color: var(--editor-text);
-  letter-spacing: -0.02em;
-}
-
-.heading-2 { 
-  font-family: var(--editor-font-serif);
-  font-size: 1.875rem; 
-  font-weight: 700; 
-  margin-top: 1.5em;
-  margin-bottom: 0.4em;
-  line-height: 1.2;
-  color: var(--editor-text);
-  letter-spacing: -0.01em;
-}
-
-.heading-3 { 
-  font-family: var(--editor-font-serif);
-  font-size: 1.5rem; 
-  font-weight: 700; 
-  margin-top: 1.2em;
-  margin-bottom: 0.4em;
-  line-height: 1.3;
-  color: var(--editor-text);
-}
-
-.heading-4 {
-  font-family: var(--editor-font-sans);
-  font-size: 1.125rem;
-  font-weight: 700;
-  margin-top: 1em;
-  margin-bottom: 0.3em;
-  line-height: 1.4;
-  color: var(--editor-text);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.heading-5 {
-  font-family: var(--editor-font-sans);
-  font-size: 0.875rem;
-  font-weight: 700;
-  margin-top: 1em;
-  margin-bottom: 0.3em;
-  line-height: 1.4;
-  color: var(--editor-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.heading-6 {
-  font-family: var(--editor-font-sans);
-  font-size: 0.75rem;
-  font-weight: 600;
-  margin-top: 1em;
-  margin-bottom: 0.3em;
-  line-height: 1.4;
-  color: var(--editor-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.paragraph { 
-  font-family: var(--editor-font-serif);
-  font-size: 1.125rem; 
-  line-height: 1.8;
-  color: var(--editor-text);
-  margin-bottom: 1em;
-}
-
-/* ===================================
-   Special Blocks - NYT Style
-   =================================== */
-.callout { 
-  font-family: var(--editor-font-sans);
-  background: #f7f7f7;
-  padding: 20px 24px;
-  border-left: 3px solid var(--editor-text);
-  font-size: 0.95rem;
-  line-height: 1.6;
-  margin: 1.5em 0;
-}
-
-.quote {
-  font-family: var(--editor-font-serif);
-  font-size: 1.375rem;
-  font-style: italic;
-  color: var(--editor-text);
-  border-left: 3px solid var(--editor-text);
-  padding-left: 24px;
-  margin: 1.5em 0;
-  line-height: 1.5;
-}
-
-.code {
-  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
-  font-size: 0.875rem;
-  background: #f7f7f7;
-  color: var(--editor-text);
-  padding: 20px 24px;
-  border: 1px solid var(--editor-border);
-  overflow-x: auto;
-  white-space: pre-wrap;
-  line-height: 1.6;
-  margin: 1em 0;
-}
-
-.bulleted-list,
-.numbered-list {
-  font-family: var(--editor-font-serif);
-  font-size: 1.125rem;
-  line-height: 1.8;
-  color: var(--editor-text);
-  padding-left: 12px;
-}
-
-.bulleted-list::before {
-  content: '•';
-  margin-right: 12px;
-  color: var(--editor-text);
-}
-
-.numbered-list::before {
-  content: '1.';
-  margin-right: 12px;
-  color: var(--editor-text);
-}
-
-.todo {
-  font-family: var(--editor-font-sans);
-  font-size: 1rem;
-  line-height: 1.6;
-  color: var(--editor-text);
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.todo::before {
-  content: '☐';
-  font-size: 1.125rem;
-  color: var(--editor-text-muted);
-}
-
-.divider {
-  border: none;
-  border-top: 1px solid var(--editor-border);
-  margin: 2em 0;
-  height: 0;
-  min-height: 0;
-}
-
-.image {
-  max-width: 100%;
-  background: #f7f7f7;
-  padding: 16px;
-  text-align: center;
-  color: var(--editor-text-muted);
-  font-family: var(--editor-font-sans);
-  font-size: 0.875rem;
-  font-style: italic;
-  border: 1px solid var(--editor-border);
-  margin: 1.5em 0;
-}
-
-.table {
-  font-family: 'Menlo', 'Monaco', monospace;
-  font-size: 0.8125rem;
-  white-space: pre;
-  background: #f7f7f7;
-  padding: 16px;
-  border: 1px solid var(--editor-border);
-  overflow-x: auto;
-  margin: 1em 0;
-}
-
-/* ===================================
-   Layout Blocks - Clean Style
-   =================================== */
+/* Block Styles */
 .block-row {
   display: flex;
   gap: 24px;
-  width: 100%;
-  align-items: flex-start;
-  margin: 1em 0;
 }
 
 .block-column {
@@ -1733,165 +1538,118 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0;
-  padding: 0;
-  border: none;
-  transition: all var(--editor-transition);
+  gap: 16px;
   position: relative;
-  background: transparent;
 }
 
-.block-column:hover {
-  border-color: transparent;
+.column-resize-handle {
+  width: 4px;
+  cursor: col-resize;
   background: transparent;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  margin: 0 4px;
+  border-radius: 2px;
 }
 
-.column-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  min-height: 40px;
+.column-resize-handle:hover,
+.column-resize-handle:active {
+  background: #d1d5db;
 }
 
 .empty-column-drop-zone {
   height: 60px;
+  border: 2px dashed #eee;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--editor-text-muted);
-  font-family: var(--editor-font-sans);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border: 1px dashed var(--editor-border);
-  margin-top: 8px;
-  transition: all var(--editor-transition);
-  background: transparent;
+  color: #ccc;
+  font-size: 13px;
 }
 
-.empty-column-drop-zone:hover {
-  border-color: var(--editor-text);
-  color: var(--editor-text);
-  background: #fafafa;
-}
-
-.empty-editor {
-  padding: 80px 20px;
-  color: var(--editor-text-muted);
-  cursor: text;
-  text-align: center;
-  font-family: var(--editor-font-serif);
-  font-size: 1.125rem;
-  font-style: italic;
-}
-
-/* ===================================
-   Menus - NYT Style
-   =================================== */
-.slash-menu,
-.settings-menu {
-  position: absolute;
+/* Menus */
+.slash-menu, .settings-menu {
+  position: fixed;
   z-index: 100;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
   width: 280px;
-  background: var(--editor-bg);
-  border: 1px solid var(--editor-border);
-  box-shadow: var(--editor-shadow-md);
-  max-height: 360px;
+  max-height: 320px;
   overflow-y: auto;
   padding: 6px;
 }
 
 .menu-header {
-  padding: 8px 12px 4px;
-  font-family: var(--editor-font-sans);
-  font-size: 10px;
-  font-weight: 600;
+  padding: 6px 10px;
+  font-size: 11px;
   text-transform: uppercase;
-  color: var(--editor-text-muted);
-  letter-spacing: 0.1em;
+  color: #999;
+  letter-spacing: 0.5px;
+  font-weight: 600;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  padding: 8px 12px;
+  padding: 8px 10px;
   border: none;
   background: transparent;
   text-align: left;
   cursor: pointer;
-  transition: all var(--editor-transition);
+  border-radius: 6px;
+  transition: background 0.1s;
 }
 
-.menu-item:hover, 
-.menu-item.active {
+.menu-item:hover, .menu-item.active {
   background: #f5f5f5;
 }
 
 .menu-icon {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f7f7f7;
-  border: 1px solid var(--editor-border);
+  border: 1px solid #eee;
+  border-radius: 4px;
+  background: #fff;
   font-size: 14px;
-  font-weight: 500;
-  color: var(--editor-text);
-  flex-shrink: 0;
 }
 
 .menu-info {
   display: flex;
   flex-direction: column;
-  gap: 1px;
 }
 
-.menu-label { 
-  font-family: var(--editor-font-sans);
-  font-size: 13px; 
+.menu-label {
+  font-size: 14px;
   font-weight: 500;
-  color: var(--editor-text);
-  line-height: 1.3;
+  color: #333;
 }
 
-.menu-desc { 
-  font-family: var(--editor-font-sans);
-  font-size: 11px; 
-  color: var(--editor-text-muted);
-  line-height: 1.3;
+.menu-desc {
+  font-size: 12px;
+  color: #888;
 }
 
-/* ===================================
-   Responsive Design
-   =================================== */
-@media (max-width: 768px) {
-  .editor-main.split {
-    flex-direction: column;
-  }
-  
-  .editor-main.split .editor-panel,
-  .editor-main.split .preview-panel {
-    width: 100%;
-    flex: none;
-    height: 50%;
-  }
-  
-  .editor-panel {
-    border-right: none;
-    border-bottom: 1px solid var(--editor-border);
-  }
-  
-  .editor-toolbar {
-    padding: 8px 10px;
-  }
-  
-  .toolbar-btn {
-    min-width: 28px;
-    height: 28px;
-    font-size: 13px;
-  }
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ccc;
 }
 </style>

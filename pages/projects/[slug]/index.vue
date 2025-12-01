@@ -1,5 +1,5 @@
 <template>
-  <div class="project-detail-page">
+  <div class="project-detail-shell">
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
     </div>
@@ -8,78 +8,83 @@
       <NuxtLink to="/projects" class="btn-back">Back to Projects</NuxtLink>
     </div>
     <template v-else-if="project">
-      <div class="container">
-        <!-- Notion-style Header -->
-        <header class="project-header">
-          <div class="header-icon">📂</div>
-          <h1 class="project-title">{{ project.title }}</h1>
-          <div class="project-meta">
-            <span class="category-badge" v-if="project.category">{{ project.category }}</span>
-            <span class="separator" v-if="project.category && project.startDate">•</span>
-            <span class="date" v-if="project.startDate">{{ formatDate(project.startDate) }}</span>
-            <div class="header-actions">
-              <a v-if="project.links?.demo" :href="project.links.demo" target="_blank" class="action-link">
-                Visit Website ↗
-              </a>
-              <a v-if="project.links?.repo" :href="project.links.repo" target="_blank" class="action-link">
-                View Code ↗
-              </a>
+      <div class="post-detail-container project-detail-container">
+        <!-- Left Column -->
+        <div class="content-column">
+          <article class="post-detail">
+            <div v-if="project.coverImage" class="cover-wrapper">
+              <img :src="project.coverImage" :alt="project.title" class="cover" />
             </div>
-          </div>
-          <p class="project-description">{{ project.description }}</p>
-        </header>
 
-        <div class="layout">
-          <!-- Main Content (Overview) -->
-          <div class="main-column">
-            <article class="project-content">
+            <header class="article-header">
+              <div class="article-meta-top">
+                <span class="category">Project</span>
+                <span v-if="project.category" class="meta-pill">{{ project.category }}</span>
+              </div>
+
+              <h1 class="article-title">{{ project.title }}</h1>
+              <p v-if="project.description" class="article-subtitle">{{ project.description }}</p>
+
+              <div class="article-meta">
+                <div class="meta-left">
+                  <span v-if="project.startDate" class="date">Started {{ formatDate(project.startDate) }}</span>
+                  <span v-if="project.endDate" class="date"> · Ended {{ formatDate(project.endDate) }}</span>
+                  <span v-else-if="project.is_ongoing" class="date"> · Ongoing</span>
+                </div>
+                <div class="meta-right">
+                  <a v-if="project.links?.demo" :href="project.links.demo" target="_blank" class="meta-action">Live Demo ↗</a>
+                  <a v-if="project.links?.repo" :href="project.links.repo" target="_blank" class="meta-action">Source ↗</a>
+                </div>
+              </div>
+
+              <div class="header-divider"></div>
+            </header>
+
+            <div class="article-content">
               <div class="markdown-body" v-html="renderedOverview"></div>
-            </article>
-          </div>
+            </div>
+          </article>
+        </div>
 
-          <!-- Sidebar -->
-          <aside class="sidebar-column">
-            <div class="sticky-sidebar">
-              <!-- Tech Stack -->
-              <div class="sidebar-widget">
-                <h3 class="widget-title">Technologies</h3>
-                <div class="tech-tags">
-                  <span v-for="tech in project.stack" :key="tech" class="tech-tag">
-                    {{ tech }}
-                  </span>
-                </div>
-              </div>
-
-              <!-- Documentation -->
-              <div v-if="nonOverviewDocs.length > 0" class="sidebar-widget">
-                <h3 class="widget-title">Documentation</h3>
-                <div class="docs-nav">
-                  <div class="doc-filters">
-                    <button 
-                      v-for="cat in availableCategories" 
-                      :key="cat.value"
-                      :class="['filter-btn', { active: activeCategory === cat.value }]"
-                      @click="activeCategory = cat.value"
-                    >
-                      {{ cat.label }}
-                    </button>
-                  </div>
-                  
-                  <div class="docs-links">
-                    <NuxtLink
-                      v-for="doc in filteredDocs"
-                      :key="doc.id"
-                      :to="`/projects/${slug}/docs/${doc.category}/${doc.slug}`"
-                      class="doc-link-item"
-                    >
-                      <span class="doc-title-link">{{ doc.title }}</span>
-                    </NuxtLink>
-                  </div>
-                </div>
+        <!-- Right Column -->
+        <aside class="comments-column docs-column">
+          <div class="comments-sticky">
+            <div class="sidebar-card">
+              <h3 class="sidebar-title">Tech Stack</h3>
+              <div class="stack-tags">
+                <span v-for="tech in project.stack" :key="tech" class="stack-tag">{{ tech }}</span>
               </div>
             </div>
-          </aside>
-        </div>
+
+            <div v-if="nonOverviewDocs.length > 0" class="sidebar-card">
+              <h3 class="sidebar-title">Documentation</h3>
+              <div class="doc-filters">
+                <button 
+                  v-for="cat in availableCategories" 
+                  :key="cat.value"
+                  :class="['filter-btn', { active: activeCategory === cat.value }]"
+                  @click="activeCategory = cat.value"
+                >
+                  {{ cat.label }}
+                </button>
+              </div>
+              <div class="docs-list">
+                <NuxtLink
+                  v-for="doc in filteredDocs"
+                  :key="doc.id"
+                  :to="`/projects/${slug}/docs/${doc.category}/${doc.slug}`"
+                  class="doc-card"
+                >
+                  <div class="doc-card-meta">
+                    <span class="doc-category">{{ getCategoryLabel(doc.category) }}</span>
+                    <span class="doc-arrow">→</span>
+                  </div>
+                  <div class="doc-card-title">{{ doc.title }}</div>
+                </NuxtLink>
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
     </template>
   </div>
@@ -191,22 +196,312 @@ watch(slug, () => {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Inter:wght@400;500;600&display=swap');
-
-.project-detail-page {
+.project-detail-shell {
   min-height: 100vh;
-  background-color: #fff;
-  color: #111;
   padding: 60px 0 100px;
+  background: #fff;
+  color: #111;
 }
 
-.container {
-  max-width: 1200px;
+.post-detail-container {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 60px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 var(--spacing-xl);
 }
 
-/* Loading & Error */
+.content-column {
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
+  padding-right: 20px;
+}
+
+.content-column::-webkit-scrollbar {
+  width: 6px;
+}
+.content-column::-webkit-scrollbar-thumb {
+  background: #e0e0e0;
+  border-radius: 3px;
+}
+.content-column::-webkit-scrollbar-thumb:hover {
+  background: #ccc;
+}
+
+.post-detail {
+  max-width: 820px;
+}
+
+.comments-column {
+  position: sticky;
+  top: 80px;
+  height: calc(100vh - 140px);
+  overflow-y: auto;
+  padding-left: 20px;
+  border-left: 1px solid #e0e0e0;
+}
+
+.comments-column::-webkit-scrollbar {
+  width: 6px;
+}
+.comments-column::-webkit-scrollbar-thumb {
+  background: #e0e0e0;
+  border-radius: 3px;
+}
+.comments-column::-webkit-scrollbar-thumb:hover {
+  background: #ccc;
+}
+
+.comments-sticky {
+  padding-bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.cover-wrapper {
+  margin: 0 0 40px;
+}
+.cover {
+  width: 100%;
+  max-height: 480px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.article-header {
+  margin-bottom: 32px;
+}
+
+.article-meta-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.category {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #666;
+  background: #f5f5f5;
+  padding: 6px 12px;
+  border-radius: 3px;
+}
+
+.meta-pill {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #333;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #eef2ff;
+}
+
+.article-title {
+  font-family: 'Playfair Display', 'Georgia', serif;
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0 0 16px;
+}
+
+.article-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.1rem;
+  color: #444;
+  margin: 0 0 20px;
+  line-height: 1.6;
+}
+
+.article-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  color: #666;
+}
+
+.meta-left .date + .date {
+  margin-left: 4px;
+}
+
+.meta-right {
+  display: flex;
+  gap: 16px;
+}
+
+.meta-action {
+  color: #111;
+  font-weight: 700;
+  text-decoration: none;
+  border-bottom: 1px solid #111;
+  padding-bottom: 2px;
+  transition: opacity 0.2s ease;
+}
+
+.meta-action:hover {
+  opacity: 0.7;
+}
+
+.header-divider {
+  border-bottom: 1px solid #e5e5e5;
+  margin-top: 24px;
+}
+
+.article-content .markdown-body {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.05rem;
+  line-height: 1.85;
+  color: #222;
+}
+
+.markdown-body :deep(h1),
+.markdown-body :deep(h2),
+.markdown-body :deep(h3) {
+  font-family: 'Playfair Display', 'Georgia', serif;
+  font-weight: 800;
+  color: #111;
+  margin-top: 42px;
+  margin-bottom: 20px;
+}
+
+.markdown-body :deep(p) {
+  margin-bottom: 24px;
+}
+
+.markdown-body :deep(img) {
+  width: 100%;
+  height: auto;
+  margin: 28px 0;
+  border-radius: 6px;
+}
+
+.markdown-body :deep(a) {
+  color: #111;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.sidebar-card {
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  padding: 18px 16px;
+  background: #fafafa;
+}
+
+.sidebar-title {
+  margin: 0 0 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #222;
+  letter-spacing: 0.02em;
+}
+
+.stack-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stack-tag {
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #333;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+}
+
+.doc-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.filter-btn {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  font-size: 0.8rem;
+  color: #555;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+  color: #111;
+  border-color: #111;
+  background: #f5f5f5;
+}
+
+.docs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.doc-card {
+  display: block;
+  padding: 12px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  text-decoration: none;
+  background: #fff;
+  transition: all 0.2s ease;
+}
+
+.doc-card:hover {
+  border-color: #111;
+  transform: translateX(3px);
+}
+
+.doc-card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  color: #666;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+}
+
+.doc-category {
+  background: #eef2ff;
+  color: #333;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.doc-card-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111;
+}
+
+.doc-arrow {
+  font-weight: 700;
+}
+
 .loading-state, .error-state {
   min-height: 60vh;
   display: flex;
@@ -230,222 +525,40 @@ watch(slug, () => {
   100% { transform: rotate(360deg); }
 }
 
-/* Header */
-.project-header {
-  margin-bottom: 60px;
-  padding-bottom: 40px;
-  border-bottom: 1px solid #e5e5e5;
-}
-
-.header-icon {
-  font-size: 3rem;
-  margin-bottom: 24px;
-}
-
-.project-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 3.5rem;
-  font-weight: 900;
-  line-height: 1.1;
-  margin: 0 0 24px;
-  letter-spacing: -1px;
-}
-
-.project-meta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
-  color: #666;
-  margin-bottom: 24px;
-}
-
-.category-badge {
-  background: #f5f5f5;
-  padding: 4px 12px;
-  border-radius: 4px;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  color: #444;
-}
-
-.separator {
-  color: #ccc;
-}
-
-.header-actions {
-  display: flex;
-  gap: 16px;
-  margin-left: auto;
-}
-
-.action-link {
+.btn-back {
   color: #111;
-  text-decoration: none;
-  font-weight: 600;
-  border-bottom: 1px solid #111;
-  padding-bottom: 2px;
-  transition: opacity 0.2s;
-}
-
-.action-link:hover {
-  opacity: 0.7;
-}
-
-.project-description {
-  font-family: 'Merriweather', serif;
-  font-size: 1.25rem;
-  line-height: 1.6;
-  color: #444;
-  max-width: 800px;
-  margin: 0;
-}
-
-/* Layout */
-.layout {
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 80px;
-}
-
-/* Main Content */
-.markdown-body {
-  font-family: 'Merriweather', serif;
-  font-size: 1.125rem;
-  line-height: 1.9;
-  color: #222;
-}
-
-.markdown-body :deep(h1),
-.markdown-body :deep(h2),
-.markdown-body :deep(h3) {
-  font-family: 'Playfair Display', serif;
   font-weight: 700;
-  color: #111;
-  margin-top: 48px;
-  margin-bottom: 24px;
-}
-
-.markdown-body :deep(p) {
-  margin-bottom: 32px;
-}
-
-.markdown-body :deep(img) {
-  width: 100%;
-  height: auto;
-  margin: 40px 0;
-  display: block;
-  border-radius: 4px;
-}
-
-.markdown-body :deep(a) {
-  color: #111;
   text-decoration: underline;
-  text-underline-offset: 4px;
 }
 
-/* Sidebar */
-.sticky-sidebar {
-  position: sticky;
-  top: 40px;
-}
-
-.sidebar-widget {
-  margin-bottom: 48px;
-}
-
-.widget-title {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #999;
-  margin: 0 0 20px;
-}
-
-.tech-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.tech-tag {
-  padding: 6px 12px;
-  background: #f5f5f5;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  color: #444;
-  font-family: 'Inter', sans-serif;
-}
-
-/* Doc Links */
-.doc-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.filter-btn {
-  background: none;
-  border: none;
-  font-size: 0.75rem;
-  color: #999;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-weight: 600;
-  text-transform: uppercase;
-  transition: all 0.2s;
-}
-
-.filter-btn:hover, .filter-btn.active {
-  color: #111;
-  background: #f5f5f5;
-}
-
-.docs-links {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.doc-link-item {
-  display: block;
-  padding: 8px 0;
-  color: #444;
-  text-decoration: none;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
-  border-bottom: 1px solid #eee;
-  transition: all 0.2s;
-}
-
-.doc-link-item:hover {
-  color: #111;
-  padding-left: 4px;
-  border-bottom-color: #111;
-}
-
-@media (max-width: 960px) {
-  .layout {
+@media (max-width: 1100px) {
+  .post-detail-container {
     grid-template-columns: 1fr;
-    gap: 40px;
+    max-width: 960px;
   }
-  
-  .project-title {
-    font-size: 2.5rem;
+
+  .comments-column {
+    position: static;
+    height: auto;
+    border-left: none;
+    padding-left: 0;
+    overflow: visible;
   }
-  
-  .header-actions {
-    margin-left: 0;
-    width: 100%;
-    margin-top: 16px;
+
+  .content-column {
+    max-height: none;
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .article-title {
+    font-size: 2.3rem;
+  }
+  .article-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
   }
 }
 </style>

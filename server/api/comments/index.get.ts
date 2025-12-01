@@ -5,6 +5,7 @@ export default defineEventHandler(async (event) => {
   const commentableType = query.commentable_type as string
   const commentableId = query.commentable_id as string
   const locale = query.locale as string || 'en'
+  const authHeader = getHeader(event, 'authorization')
   
   if (!commentableType || !commentableId) {
     throw createError({
@@ -18,7 +19,8 @@ export default defineEventHandler(async (event) => {
   try {
     const response = await $fetch(backendUrl, {
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        ...(authHeader ? { 'Authorization': authHeader } : {})
       }
     })
     return response

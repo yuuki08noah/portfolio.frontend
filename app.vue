@@ -206,9 +206,8 @@
 }
 
 .auth-link:hover {
-  background: var(--color-black);
-  color: var(--color-white);
-  text-decoration: none;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
 }
 
 .site-main {

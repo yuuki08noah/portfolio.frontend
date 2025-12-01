@@ -715,7 +715,7 @@ const handleSubmit = async () => {
   background: transparent;
   border: none;
   color: #666;
-  font-family: 'Georgia', serif;
+  font-family: var(--font-body);
   font-size: 14px;
   cursor: pointer;
   transition: color 0.2s;
@@ -737,14 +737,14 @@ const handleSubmit = async () => {
 }
 
 .project-title {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 600;
   color: #111;
 }
 
 .step-indicator {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-body);
   font-size: 12px;
   color: #999;
 }
@@ -759,7 +759,7 @@ const handleSubmit = async () => {
   background: transparent;
   border: 1px solid #ccc;
   color: #333;
-  font-family: 'Georgia', serif;
+  font-family: var(--font-body);
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
@@ -781,7 +781,7 @@ const handleSubmit = async () => {
   background: #111;
   border: 1px solid #111;
   color: #fff;
-  font-family: 'Georgia', serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -841,7 +841,7 @@ const handleSubmit = async () => {
 }
 
 .editor-heading {
-  font-family: 'Playfair Display', 'Georgia', serif;
+  font-family: 'Playfair Display', 'NanumSquare_ac', 'NanumSquare', serif;
   font-size: 1.5rem;
   font-weight: 700;
   color: #111;
@@ -862,7 +862,7 @@ const handleSubmit = async () => {
 }
 
 .preview-title {
-  font-family: 'Playfair Display', 'Georgia', serif;
+  font-family: 'Playfair Display', 'NanumSquare_ac', 'NanumSquare', serif;
   font-size: 2rem;
   font-weight: 700;
   color: #111;
@@ -871,7 +871,7 @@ const handleSubmit = async () => {
 }
 
 .preview-description {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-body);
   font-size: 18px;
   color: #666;
   line-height: 1.6;
@@ -891,7 +891,7 @@ const handleSubmit = async () => {
   padding: 4px 12px;
   background: #f5f5f5;
   border: 1px solid #e0e0e0;
-  font-family: 'Georgia', serif;
+  font-family: var(--font-body);
   font-size: 13px;
   color: #333;
 }
@@ -901,7 +901,7 @@ const handleSubmit = async () => {
   font-style: italic;
   text-align: center;
   padding: 60px 20px;
-  font-family: 'Georgia', serif;
+  font-family: var(--font-body);
 }
 
 .error-toast {
@@ -917,7 +917,7 @@ const handleSubmit = async () => {
   align-items: center;
   gap: 16px;
   max-width: 400px;
-  font-family: 'Georgia', serif;
+  font-family: var(--font-body);
 }
 
 .error-toast button {

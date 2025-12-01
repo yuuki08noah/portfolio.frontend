@@ -148,7 +148,8 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import type { ProjectBlogPost } from '~/types/portfolio'
 
 definePageMeta({
-  middleware: ['admin']
+  middleware: ['admin'],
+  ssr: true
 })
 
 const route = useRoute()

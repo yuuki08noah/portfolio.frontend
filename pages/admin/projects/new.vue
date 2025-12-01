@@ -142,7 +142,8 @@ import MarkdownRenderer from '~/components/blog/MarkdownRenderer.vue'
 
 definePageMeta({
   middleware: ['admin'],
-  layout: false
+  layout: false,
+  ssr: true
 })
 
 const router = useRouter()

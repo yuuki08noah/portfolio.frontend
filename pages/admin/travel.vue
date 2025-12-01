@@ -267,7 +267,8 @@ import LangTabs from '~/components/admin/LangTabs.vue'
 import '~/assets/css/admin.css'
 
 definePageMeta({
-  middleware: ['auth']
+  middleware: ['auth'],
+  ssr: true
 })
 
 const { fetchDiaries, createDiary, updateDiary, deleteDiary: removeDiary } = useTravelDiary()

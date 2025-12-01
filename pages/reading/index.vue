@@ -679,8 +679,8 @@ const formatDate = (dateStr: string) => {
 }
 
 .sidebar-nav-link:hover {
-  background: #111;
-  color: #fff;
+  background: #f5f5f5;
+  color: #111;
   border-color: #111;
 }
 

@@ -171,7 +171,7 @@ const canProceed = computed(() => {
 })
 
 const loadDraft = () => {
-  if (process.client) {
+  if (typeof window !== 'undefined') {
     const saved = localStorage.getItem(DRAFT_KEY)
     if (saved) {
       try {
@@ -194,7 +194,7 @@ const loadDraft = () => {
 }
 
 const saveDraft = () => {
-  if (process.client) {
+  if (typeof window !== 'undefined') {
     const data = {
       ...form.value,
       savedAt: new Date().toISOString()
@@ -206,7 +206,7 @@ const saveDraft = () => {
 }
 
 const clearDraft = () => {
-  if (process.client) {
+  if (typeof window !== 'undefined') {
     localStorage.removeItem(DRAFT_KEY)
   }
 }
@@ -291,7 +291,21 @@ watch(() => form.value.title, (newTitle) => {
       .replace(/^-|-$/g, '')
   }
 })
+
+// Auto-save draft when form changes
+watch(form, () => {
+  if (typeof window !== 'undefined' && (form.value.title || form.value.content)) {
+    saveDraft()
+  }
+}, { deep: true })
 </script>
+
+<style>
+html, body {
+  overflow-y: auto !important;
+  height: auto !important;
+}
+</style>
 
 <style scoped>
 .create-blog-page {
@@ -394,7 +408,7 @@ watch(() => form.value.title, (newTitle) => {
 .step-content.full-height {
   max-width: none;
   padding: 0;
-  height: calc(100vh - 200px);
+  margin: 0;
 }
 
 .form-section {
@@ -525,7 +539,6 @@ watch(() => form.value.title, (newTitle) => {
 }
 
 .editor-container {
-  height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--color-white);
@@ -535,7 +548,7 @@ watch(() => form.value.title, (newTitle) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-lg) var(--spacing-2xl);
+  padding: var(--spacing-md) var(--spacing-lg);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -586,7 +599,7 @@ watch(() => form.value.title, (newTitle) => {
 
 .btn-submit {
   padding: var(--spacing-sm) var(--spacing-xl);
-  background: #28a745;
+  background: #121212;
   color: white;
   border: none;
   border-radius: var(--radius-sm);
@@ -596,7 +609,7 @@ watch(() => form.value.title, (newTitle) => {
 }
 
 .btn-submit:hover:not(:disabled) {
-  background: #218838;
+  background: #333333;
 }
 
 .btn-submit:disabled {

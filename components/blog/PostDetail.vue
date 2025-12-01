@@ -57,11 +57,18 @@
         <ShareButtons :title="post.title" :url="currentUrl" />
       </div>
     </footer>
+
+    <!-- Comments Section -->
+    <CommentThread
+      commentable-type="BlogPost"
+      :commentable-id="post.id"
+    />
   </article>
 </template>
 
 <script setup lang="ts">
 import type { BlogPost } from '~/types'
+import CommentThread from './CommentThread.vue'
 
 const props = defineProps<{
   post: BlogPost

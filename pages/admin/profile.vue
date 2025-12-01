@@ -139,8 +139,8 @@
         </div>
         <div class="form-grid">
           <div class="field">
-            <label for="email">{{ t.email }}</label>
-            <input id="email" v-model="form.email" type="email" placeholder="email@example.com" />
+            <label for="contact_email">{{ t.email }}</label>
+            <input id="contact_email" v-model="form.contact_email" type="email" placeholder="email@example.com" />
           </div>
           <div class="field">
             <label for="phone">{{ t.phone }}</label>
@@ -557,7 +557,7 @@ interface ProfileForm {
   job_position: string
   location_country: string
   location_city: string
-  email: string
+  contact_email: string
   phone: string
   github_url: string
   linkedin_url: string
@@ -589,7 +589,7 @@ const form = reactive<ProfileForm>({
   job_position: '',
   location_country: '',
   location_city: '',
-  email: '',
+  contact_email: '',
   phone: '',
   github_url: '',
   linkedin_url: '',
@@ -633,6 +633,7 @@ const loadProfile = async () => {
       
       Object.assign(form, {
         ...response.profile,
+        contact_email: response.profile.email || '',
         skills: response.profile.skills || [],
         values: response.profile.values || [],
         external_links: response.profile.external_links || [],

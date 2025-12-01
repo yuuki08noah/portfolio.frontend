@@ -1,0 +1,12 @@
+# Frontend Docker ignore
+node_modules
+.nuxt
+.output
+dist
+.git
+.gitignore
+*.md
+.env*
+!.env.example
+.DS_Store
+*.log

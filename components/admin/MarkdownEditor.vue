@@ -1,32 +1,55 @@
 <template>
   <div class="markdown-editor-container">
-    <div class="editor-toolbar">
-      <button type="button" class="toolbar-btn" title="Add Block" @click="addBlock('paragraph')">＋</button>
-      <span class="toolbar-divider"></span>
-      <button type="button" class="toolbar-btn" title="Heading 1" @click="addBlock('heading-1')">H<sub>1</sub></button>
-      <button type="button" class="toolbar-btn" title="Heading 2" @click="addBlock('heading-2')">H<sub>2</sub></button>
-      <button type="button" class="toolbar-btn" title="Heading 3" @click="addBlock('heading-3')">H<sub>3</sub></button>
-      <span class="toolbar-divider"></span>
-      <button type="button" class="toolbar-btn" title="Bold" @click="wrapSelection('**')"><strong>B</strong></button>
-      <button type="button" class="toolbar-btn" title="Italic" @click="wrapSelection('*')"><em>I</em></button>
-      <button type="button" class="toolbar-btn toolbar-strikethrough" title="Strikethrough" @click="wrapSelection('~~')">S</button>
-      <button type="button" class="toolbar-btn" title="Inline Code" @click="wrapSelection('`')"><code>`</code></button>
-      <span class="toolbar-divider"></span>
-      <button type="button" class="toolbar-btn" title="Bulleted List" @click="addBlock('bulleted-list')">•</button>
-      <button type="button" class="toolbar-btn" title="Numbered List" @click="addBlock('numbered-list')">1.</button>
-      <button type="button" class="toolbar-btn" title="To-do" @click="addBlock('todo')">☑</button>
-      <span class="toolbar-divider"></span>
-      <button type="button" class="toolbar-btn" title="Quote" @click="addBlock('quote')">❝</button>
-      <button type="button" class="toolbar-btn" title="Code Block" @click="addBlock('code')">💻</button>
-      <button type="button" class="toolbar-btn" title="Callout" @click="addBlock('callout')">💡</button>
-      <button type="button" class="toolbar-btn" title="Divider" @click="addBlock('divider')">—</button>
-      <span class="toolbar-divider"></span>
-      <button type="button" class="toolbar-btn" title="Image" @click="addBlock('image')">🖼️</button>
-      <button type="button" class="toolbar-btn" title="Link" @click="insertLink">🔗</button>
-      <button type="button" class="toolbar-btn" title="Table" @click="addBlock('table')">▦</button>
+    <!-- View Mode Toggle -->
+    <div class="view-toggle">
+      <button 
+        :class="['toggle-btn', { active: viewMode === 'editor' }]" 
+        @click="viewMode = 'editor'"
+      >
+        Editor
+      </button>
+      <button 
+        :class="['toggle-btn', { active: viewMode === 'split' }]" 
+        @click="viewMode = 'split'"
+      >
+        Split
+      </button>
+      <button 
+        :class="['toggle-btn', { active: viewMode === 'preview' }]" 
+        @click="viewMode = 'preview'"
+      >
+        Preview
+      </button>
     </div>
 
-    <div class="editor-wrapper" ref="editorWrapper">
+    <div class="editor-main" :class="viewMode">
+      <!-- Editor Panel -->
+      <div v-show="viewMode !== 'preview'" class="editor-panel">
+        <div class="editor-toolbar">
+          <button type="button" class="toolbar-btn" title="Add Block" @click="addBlock('paragraph')">＋</button>
+          <span class="toolbar-divider"></span>
+          <button type="button" class="toolbar-btn" title="Heading 1" @click="addBlock('heading-1')">H<sub>1</sub></button>
+          <button type="button" class="toolbar-btn" title="Heading 2" @click="addBlock('heading-2')">H<sub>2</sub></button>
+          <button type="button" class="toolbar-btn" title="Heading 3" @click="addBlock('heading-3')">H<sub>3</sub></button>
+          <span class="toolbar-divider"></span>
+          <button type="button" class="toolbar-btn" title="Bold" @click="wrapSelection('**')"><strong>B</strong></button>
+          <button type="button" class="toolbar-btn" title="Italic" @click="wrapSelection('*')"><em>I</em></button>
+          <button type="button" class="toolbar-btn toolbar-strikethrough" title="Strikethrough" @click="wrapSelection('~~')">S</button>
+          <button type="button" class="toolbar-btn" title="Inline Code" @click="wrapSelection('`')"><code>`</code></button>
+          <span class="toolbar-divider"></span>
+          <button type="button" class="toolbar-btn" title="Bulleted List" @click="addBlock('bulleted-list')">•</button>
+          <button type="button" class="toolbar-btn" title="Numbered List" @click="addBlock('numbered-list')">1.</button>
+          <button type="button" class="toolbar-btn" title="To-do" @click="addBlock('todo')">☑</button>
+          <span class="toolbar-divider"></span>
+          <button type="button" class="toolbar-btn" title="Quote" @click="addBlock('quote')">❝</button>
+          <button type="button" class="toolbar-btn" title="Code Block" @click="addBlock('code')">💻</button>
+          <button type="button" class="toolbar-btn" title="Callout" @click="addBlock('callout')">💡</button>
+          <button type="button" class="toolbar-btn" title="Divider" @click="addBlock('divider')">—</button>
+          <span class="toolbar-divider"></span>
+          <button type="button" class="toolbar-btn" title="Image" @click="addBlock('image')">🖼️</button>
+          <button type="button" class="toolbar-btn" title="Link" @click="insertLink">🔗</button>
+          <button type="button" class="toolbar-btn" title="Table" @click="addBlock('table')">▦</button>
+        </div>
       <div class="blocks-list">
         <template v-for="(block, index) in blocks" :key="block.id">
           
@@ -52,7 +75,7 @@
                     v-model="childBlock.content"
                     :class="childBlock.type"
                     :placeholder="getPlaceholder(childBlock.type)"
-                    @enter="handleEnter(childBlock.id, col.id)"
+                    @enter="(e) => handleEnter(e, childBlock.id, col.id)"
                     @backspace="handleBackspace(childBlock.id, col.id)"
                     @slash="handleSlash($event, childBlock.id)"
                     @double-colon="handleDoubleColon($event, childBlock.id)"
@@ -83,7 +106,7 @@
               v-model="block.content"
               :class="block.type"
               :placeholder="getPlaceholder(block.type)"
-              @enter="handleEnter(block.id)"
+              @enter="(e) => handleEnter(e, block.id)"
               @backspace="handleBackspace(block.id)"
               @slash="handleSlash($event, block.id)"
               @double-colon="handleDoubleColon($event, block.id)"
@@ -531,58 +554,53 @@ const addBlock = (type: Block['type']) => {
   })
 }
 
-const handleEnter = (blockId: string, parentId?: string) => {
+const handleEnter = (event: { afterText: string } | Event, blockId?: string, parentId?: string) => {
+  // Handle both old Event signature and new object signature
+  const afterText = typeof event === 'object' && 'afterText' in event ? event.afterText : ''
+  const actualBlockId = blockId || (typeof event === 'object' && 'target' in event ? '' : '')
+  
   if (showSlashMenu.value) {
     executeCommand(filteredCommands.value[selectedCommandIndex.value])
     return
   }
   
-  const path = findBlockPath(blockId, blocks.value)
+  // If called with old signature, blockId is in first param
+  const searchId = actualBlockId || blockId
+  if (!searchId) return
+  
+  const path = findBlockPath(searchId, blocks.value)
   if (path) {
     const { list, index } = path[path.length - 1]
     const newBlock: Block = {
       id: generateId(),
       type: 'paragraph',
-      content: ''
+      content: afterText || ''
     }
     list.splice(index + 1, 0, newBlock)
     
-    // Focus the new block after it's rendered
+    // Focus the new block after rendering
     nextTick(() => {
       if (typeof document === 'undefined') return
       
-      // Find all contenteditable elements
-      const editables = document.querySelectorAll('.content-block-input')
-      // Calculate which editable corresponds to our new block
-      // This is a simplified approach - in production we'd use refs
-      let currentIndex = 0
-      const targetIndex = index + 1
-      
-      // Count blocks recursively to find the right index
-      const countBlocks = (blocksList: Block[]): number => {
-        let count = 0
-        for (const b of blocksList) {
-          if (b.type === 'row' && b.children) {
-            for (const col of b.children) {
-              if (col.children) count += countBlocks(col.children)
+      const currentElement = document.activeElement
+      if (currentElement) {
+        const parentBlock = currentElement.closest('.editor-block-wrapper')
+        if (parentBlock) {
+          const nextBlock = parentBlock.nextElementSibling
+          if (nextBlock) {
+            const nextInput = nextBlock.querySelector('.content-block-input') as HTMLElement
+            if (nextInput) {
+              nextInput.focus()
+              // Place cursor at the start of the new block
+              const range = document.createRange()
+              const sel = window.getSelection()
+              range.setStart(nextInput, 0)
+              range.collapse(true)
+              sel?.removeAllRanges()
+              sel?.addRange(range)
             }
-          } else if (b.type !== 'column') {
-            count++
           }
         }
-        return count
-      }
-      
-      // Find the editable for newBlock.id
-      editables.forEach((el) => {
-        const parent = el.closest('[data-block-id]')
-        // Since we just added it, it should be one of the later ones
-      })
-      
-      // Simplified: just try to focus the next editable after current
-      // This works for simple cases
-      if (editables[targetIndex]) {
-        (editables[targetIndex] as HTMLElement).focus()
       }
     })
   }

@@ -34,7 +34,7 @@ const { data: settings } = await useAsyncData('site-settings', () =>
 const heroTitle = computed(() => getSetting(settings.value || [], 'hero.title') || 'A Journey to Myself');
 const heroSubtitle = computed(() => getSetting(settings.value || [], 'hero.subtitle') || 'Explore my projects and the experiences that shaped my path as a developer.');
 const exploreBtn = computed(() => getSetting(settings.value || [], 'hero.explore_btn') || 'Explore Projects');
-const hireBtn = computed(() => getSetting(settings.value || [], 'hero.hire_btn') || 'Hire Me');
+const hireBtn = computed(() => getSetting(settings.value || [], 'hero.hire_btn') || 'ReHire Me');
 
 const currentDate = computed(() => {
   const now = new Date();

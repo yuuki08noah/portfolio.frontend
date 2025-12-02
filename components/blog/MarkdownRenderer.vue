@@ -23,6 +23,7 @@ const renderedMarkdown = computed(() => renderMarkdown(props.content))
 .markdown-content {
   line-height: 1.75;
   color: #374151;
+  font-family: var(--font-body, 'Inter', 'Helvetica Neue', Arial, sans-serif);
 }
 
 /* Headings */
@@ -237,6 +238,43 @@ const renderedMarkdown = computed(() => renderMarkdown(props.content))
 
 .markdown-content .callout-content {
   flex: 1;
+}
+
+/* TOC block */
+.markdown-content .toc-block {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 16px 0;
+  background: #f9fafb;
+}
+
+.markdown-content .toc-header {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.markdown-content .toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.markdown-content .toc-item {
+  margin: 4px 0;
+}
+
+.markdown-content .toc-item a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.markdown-content .toc-item a:hover {
+  text-decoration: underline;
 }
 
 /* Embeds */

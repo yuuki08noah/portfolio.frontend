@@ -3,11 +3,6 @@ name: Frontend Deploy
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'frontend/**'
-      - 'infra/**'
-      - 'frontend/.github/workflows/frontend-deploy.yml'
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest

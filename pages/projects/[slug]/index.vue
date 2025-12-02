@@ -12,8 +12,8 @@
         <!-- Left Column -->
         <div class="content-column">
           <article class="post-detail">
-            <div v-if="project.coverImage" class="cover-wrapper">
-              <img :src="project.coverImage" :alt="project.title" class="cover" />
+            <div v-if="projectCover" class="cover-wrapper">
+              <img :src="projectCover" :alt="project.title" class="cover" />
             </div>
 
             <header class="article-header">
@@ -40,9 +40,11 @@
               <div class="header-divider"></div>
             </header>
 
-            <div class="article-content">
-              <div class="markdown-body" v-html="renderedOverview"></div>
-            </div>
+              <div class="article-content">
+                <div class="markdown-body">
+                  <MarkdownRenderer :content="overviewContent" />
+                </div>
+              </div>
           </article>
         </div>
 
@@ -92,7 +94,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { marked } from 'marked'
+import MarkdownRenderer from '~/components/blog/MarkdownRenderer.vue'
 import type { PortfolioProject, ProjectBlogPost } from '~/types/portfolio'
 
 const route = useRoute()
@@ -131,13 +133,10 @@ const overviewContent = computed(() => {
   return overviewDoc.value?.content || ''
 })
 
-const renderedOverview = computed(() => {
-  if (!overviewContent.value) return ''
-  try {
-    return marked(overviewContent.value)
-  } catch (e) {
-    return '<p>Error rendering content</p>'
-  }
+const projectCover = computed(() => {
+  if (!project.value) return ''
+  // Support both camelCase and snake_case from API
+  return (project.value as any).coverImage || (project.value as any).cover_image || ''
 })
 
 // Filter out overview from docs list
@@ -213,8 +212,7 @@ watch(slug, () => {
 }
 
 .content-column {
-  overflow-y: auto;
-  max-height: calc(100vh - 120px);
+  overflow: visible;
   padding-right: 20px;
 }
 

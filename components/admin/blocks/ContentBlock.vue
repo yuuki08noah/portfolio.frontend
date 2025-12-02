@@ -24,6 +24,31 @@ const emit = defineEmits(['update:modelValue', 'enter', 'backspace', 'arrow-up',
 
 const element = ref<HTMLElement | null>(null)
 const isLocked = ref(false)
+const hasDoubleColonToken = ref(false)
+const buildRectPayload = () => {
+  const el = element.value
+  const selection = window.getSelection()
+  const rangeRect = selection && selection.rangeCount > 0 
+    ? selection.getRangeAt(0).getBoundingClientRect()
+    : null
+
+  const baseRect = el ? el.getBoundingClientRect() : null
+
+  return {
+    selectionRect: rangeRect ? {
+      top: rangeRect.top,
+      left: rangeRect.left,
+      bottom: rangeRect.bottom,
+      right: rangeRect.right
+    } : null,
+    targetRect: baseRect ? {
+      top: baseRect.top,
+      left: baseRect.left,
+      bottom: baseRect.bottom,
+      right: baseRect.right
+    } : null
+  }
+}
 
 onMounted(() => {
   if (element.value) {
@@ -43,15 +68,19 @@ const onInput = (e: Event) => {
   isLocked.value = true
   emit('update:modelValue', target.innerText)
   
-  const selection = window.getSelection()
-  if (selection && selection.rangeCount > 0) {
-    const text = target.innerText
-    if (text.includes('/')) {
-      emit('slash', e)
+  const text = target.innerText
+
+  if (text.includes('/')) {
+    emit('slash', e)
+  }
+
+  if (text.includes('::')) {
+    if (!hasDoubleColonToken.value) {
+      emit('double-colon', { ...buildRectPayload(), originalEvent: e })
+      hasDoubleColonToken.value = true
     }
-    if (text.includes('::')) {
-      emit('double-colon', e)
-    }
+  } else {
+    hasDoubleColonToken.value = false
   }
 
   nextTick(() => {
@@ -59,38 +88,47 @@ const onInput = (e: Event) => {
   })
 }
 
+const getCaretOffset = (root: HTMLElement): number | null => {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0) return null
+  const range = selection.getRangeAt(0)
+  if (!root.contains(range.startContainer)) return null
+
+  const preRange = range.cloneRange()
+  preRange.selectNodeContents(root)
+  preRange.setEnd(range.startContainer, range.startOffset)
+  return preRange.toString().length
+}
+
 const onKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault()
     
     const target = e.target as HTMLElement
-    const selection = window.getSelection()
-    
-    if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0)
-      const cursorOffset = range.startOffset
-      
-      // Get the text content
-      const fullText = target.innerText
-      
-      // Split at cursor position
-      const beforeCursor = fullText.substring(0, cursorOffset)
-      const afterCursor = fullText.substring(cursorOffset)
-      
-      // Update current block with text before cursor
-      target.innerText = beforeCursor
-      emit('update:modelValue', beforeCursor)
-      
-      // Emit enter with the text that should go to the new block
-      emit('enter', { afterText: afterCursor })
-    } else {
+    const cursorOffset = getCaretOffset(target)
+    if (cursorOffset === null) {
       emit('enter', { afterText: '' })
+      return
     }
+
+    const fullText = target.textContent || ''
+    const beforeCursor = fullText.slice(0, cursorOffset)
+    const afterCursor = fullText.slice(cursorOffset)
+
+    target.textContent = beforeCursor
+    emit('update:modelValue', beforeCursor)
+    emit('enter', { afterText: afterCursor })
     return
   }
   
   if (e.key === 'Backspace') {
     const target = e.target as HTMLElement
+    const offset = getCaretOffset(target)
+    if (offset === 0) {
+      e.preventDefault()
+      emit('backspace', { merge: true })
+      return
+    }
     if (!target.innerText.trim()) {
       e.preventDefault()
       emit('backspace', e)
@@ -161,6 +199,7 @@ const onBlur = () => {
   padding: 3px 2px;
   border-radius: 3px;
   transition: background-color 0.15s ease;
+  font-family: var(--font-body, 'Inter', 'Helvetica Neue', Arial, sans-serif);
 }
 
 .content-block-input:hover {

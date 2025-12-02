@@ -113,32 +113,8 @@
         </div>
       </header>
 
-      <div class="editor-layout">
-        <div class="editor-pane">
-          <div class="editor-inner">
-            <h2 class="editor-heading">Project Overview</h2>
-            <div class="editor-divider"></div>
-
-            <!-- New Markdown Editor Component -->
-            <MarkdownEditor v-model="form.overview_content" />
-          </div>
-        </div>
-
-        <div class="preview-pane">
-          <div class="preview-inner">
-            <article class="preview-article">
-              <h1 class="preview-title">{{ form.title }}</h1>
-              <p class="preview-description">{{ form.description }}</p>
-              <div class="preview-stack">
-                <span v-for="tech in form.stack" :key="tech" class="stack-tag">{{ tech }}</span>
-              </div>
-              <div class="preview-content">
-                <MarkdownRenderer :content="form.overview_content" />
-              </div>
-              <p v-if="!form.overview_content" class="preview-placeholder">Your project content will appear here...</p>
-            </article>
-          </div>
-        </div>
+      <div class="editor-container">
+        <MarkdownEditor v-model="form.overview_content" />
       </div>
 
       <div v-if="error" class="error-toast">
@@ -271,21 +247,13 @@ const loadProject = async () => {
 
 onMounted(() => {
   loadProject()
-  if (step.value === 2 && typeof document !== 'undefined') {
-    document.body.style.overflow = 'hidden'
-  }
 })
 
 onUnmounted(() => {
-  if (typeof document !== 'undefined') {
-    document.body.style.overflow = ''
-  }
+  // no-op
 })
 
 watch(step, (newStep) => {
-  if (typeof document !== 'undefined') {
-    document.body.style.overflow = newStep === 2 ? 'hidden' : ''
-  }
   if (newStep === 2) {
     nextTick(() => {
       if (typeof window !== 'undefined') {
@@ -399,11 +367,9 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 .project-edit-page {
   min-height: 100vh;
-  background: #fafafa;
+  background: #faf9f6;
 }
 
 /* Loading & Error */
@@ -451,16 +417,14 @@ const handleSubmit = async () => {
 
 /* Step 1: Info Form */
 .step-one {
-  padding: 40px 20px 80px;
+  min-height: 100vh;
+  background: #faf9f6;
+  padding: 60px 20px;
 }
 
 .step-container {
   max-width: 800px;
   margin: 0 auto;
-  background: #fff;
-  border-radius: 12px;
-  padding: 48px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 .step-header {
@@ -469,11 +433,11 @@ const handleSubmit = async () => {
 
 .back-link {
   display: inline-block;
+  margin-bottom: 16px;
+  font-size: 14px;
   color: #666;
   text-decoration: none;
-  font-size: 0.9rem;
-  margin-bottom: 16px;
-  transition: color 0.2s;
+  font-family: var(--font-body);
 }
 
 .back-link:hover {
@@ -481,31 +445,36 @@ const handleSubmit = async () => {
 }
 
 .step-title {
-  font-size: 2rem;
+  font-family: 'Playfair Display', 'NanumSquare_ac', 'NanumSquare', serif;
+  font-size: 2.5rem;
   font-weight: 700;
   margin: 0 0 8px;
   color: #111;
 }
 
 .step-subtitle {
+  font-family: var(--font-body);
+  font-size: 16px;
   color: #666;
-  font-size: 0.95rem;
   margin: 0;
 }
 
 .info-form {
+  background: #fff;
+  padding: 40px;
+  border: 1px solid #e0e0e0;
   display: flex;
   flex-direction: column;
   gap: 32px;
 }
 
 .error-message {
-  padding: 12px 16px;
-  background: #fee;
-  border-left: 3px solid #d32f2f;
-  color: #d32f2f;
-  border-radius: 4px;
-  font-size: 0.9rem;
+  padding: 16px;
+  background: #ffebee;
+  border: 1px solid #ef9a9a;
+  color: #c62828;
+  margin-bottom: 0;
+  font-family: var(--font-body);
 }
 
 .form-grid {
@@ -525,18 +494,18 @@ const handleSubmit = async () => {
 }
 
 .form-field label {
+  font-family: var(--font-body);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 14px;
   color: #333;
 }
 
 .form-field input,
 .form-field textarea {
-  padding: 10px 14px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  font-family: 'Inter', sans-serif;
+  padding: 12px 14px;
+  border: 1px solid #e0e0e0;
+  font-size: 16px;
+  font-family: var(--font-body);
   transition: border-color 0.2s;
 }
 
@@ -546,26 +515,29 @@ const handleSubmit = async () => {
   border-color: #111;
 }
 
+.form-field input:disabled {
+  background: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+
 .char-count {
-  font-size: 0.8rem;
+  font-size: 12px;
   color: #999;
   text-align: right;
+  font-family: var(--font-body);
 }
 
 .tags-input {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  border: 1px solid #e0e0e0;
   padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: #fafafa;
 }
 
 .tags-list {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-bottom: 8px;
 }
 
 .tag {
@@ -573,42 +545,38 @@ const handleSubmit = async () => {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: #111;
-  color: #fff;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  font-weight: 500;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: #333;
 }
 
 .tag-remove {
   background: none;
   border: none;
-  color: #fff;
   cursor: pointer;
-  font-size: 1.2rem;
-  line-height: 1;
   padding: 0;
-  opacity: 0.8;
-  transition: opacity 0.2s;
+  font-size: 16px;
+  line-height: 1;
+  color: #999;
 }
 
 .tag-remove:hover {
-  opacity: 1;
+  color: #c62828;
 }
 
 .tags-input input {
+  width: 100%;
+  padding: 8px 0;
   border: none;
-  background: none;
-  font-size: 0.9rem;
-  padding: 6px 0;
-}
-
-.tags-input input:focus {
   outline: none;
+  font-size: 16px;
+  font-family: var(--font-body);
 }
 
 .checkbox-field {
-  padding-top: 10px;
+  padding-top: 8px;
 }
 
 .checkbox-label {
@@ -616,8 +584,8 @@ const handleSubmit = async () => {
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  font-weight: 500;
-  color: #333;
+  font-weight: normal;
+  font-family: var(--font-body);
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -628,47 +596,54 @@ const handleSubmit = async () => {
 
 .form-actions {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   justify-content: flex-end;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
-}
-
-.btn-cancel,
-.btn-save,
-.btn-next {
-  padding: 12px 24px;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-decoration: none;
-  border: none;
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid #e0e0e0;
 }
 
 .btn-cancel {
-  background: #f5f5f5;
-  color: #666;
+  padding: 12px 24px;
+  background: transparent;
+  border: 1px solid #ccc;
+  text-decoration: none;
+  color: #333;
+  font-family: var(--font-body);
+  font-size: 14px;
+  cursor: pointer;
 }
 
 .btn-cancel:hover {
-  background: #eee;
-  color: #333;
+  border-color: #111;
 }
 
 .btn-save {
-  background: #4caf50;
+  padding: 12px 24px;
+  background: #111;
+  border: 1px solid #111;
   color: #fff;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 .btn-save:hover:not(:disabled) {
-  background: #45a049;
+  background: #333;
 }
 
 .btn-next {
+  padding: 12px 28px;
   background: #111;
+  border: 1px solid #111;
   color: #fff;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 .btn-next:hover {
@@ -683,11 +658,10 @@ const handleSubmit = async () => {
 
 /* Step 2: Editor */
 .step-two {
-  height: 100vh;
-  width: 100vw;
+  min-height: 100vh;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   background: #faf9f6;
 }
 
@@ -705,6 +679,7 @@ const handleSubmit = async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
 }
 
 .back-btn {
@@ -734,6 +709,9 @@ const handleSubmit = async () => {
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .project-title {
@@ -798,110 +776,14 @@ const handleSubmit = async () => {
   cursor: not-allowed;
 }
 
-.editor-layout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.editor-container {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   margin: 0 80px;
-}
-
-.editor-pane {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
   background: #fff;
+  border-left: 1px solid #e0e0e0;
   border-right: 1px solid #e0e0e0;
-}
-
-.preview-pane {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-  background: #fff;
-}
-
-.editor-inner {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  padding: 32px 40px;
-  overflow-y: auto;
-}
-
-.preview-inner {
-  flex: 1;
-  min-height: 0;
-  padding: 32px 40px;
-  overflow-y: auto;
-}
-
-.editor-heading {
-  font-family: 'Playfair Display', 'NanumSquare_ac', 'NanumSquare', serif;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #111;
-  margin: 0 0 16px;
-}
-
-.editor-divider {
-  width: 60px;
-  height: 3px;
-  background: #111;
-  margin-bottom: 24px;
-}
-
-.preview-article {
-  max-width: 100%;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-}
-
-.preview-title {
-  font-family: 'Playfair Display', 'NanumSquare_ac', 'NanumSquare', serif;
-  font-size: 2rem;
-  font-weight: 700;
-  color: #111;
-  line-height: 1.2;
-  margin: 0 0 16px;
-}
-
-.preview-description {
-  font-family: var(--font-body);
-  font-size: 18px;
-  color: #666;
-  line-height: 1.6;
-  margin: 0 0 20px;
-}
-
-.preview-stack {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 32px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.stack-tag {
-  padding: 4px 12px;
-  background: #f5f5f5;
-  border: 1px solid #e0e0e0;
-  font-family: var(--font-body);
-  font-size: 13px;
-  color: #333;
-}
-
-.preview-placeholder {
-  color: #999;
-  font-style: italic;
-  text-align: center;
-  padding: 60px 20px;
-  font-family: var(--font-body);
 }
 
 .error-toast {
@@ -930,17 +812,6 @@ const handleSubmit = async () => {
   line-height: 1;
 }
 
-@media (max-width: 1200px) {
-  .editor-layout {
-    grid-template-columns: 1fr;
-    margin: 0 20px;
-  }
-
-  .preview-pane {
-    display: none;
-  }
-}
-
 @media (max-width: 768px) {
   .step-container {
     padding: 32px 24px;
@@ -962,6 +833,10 @@ const handleSubmit = async () => {
 
   .top-bar-inner {
     padding: 0 20px;
+  }
+
+  .editor-container {
+    margin: 0 20px;
   }
 }
 </style>

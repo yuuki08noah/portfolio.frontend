@@ -177,21 +177,13 @@ const clearDraft = () => {
 
 onMounted(() => {
   loadDraft()
-  if (step.value === 2 && typeof document !== 'undefined') {
-    document.body.style.overflow = 'hidden'
-  }
 })
 
 onUnmounted(() => {
-  if (typeof document !== 'undefined') {
-    document.body.style.overflow = ''
-  }
+  // no-op
 })
 
 watch(step, (newStep) => {
-  if (typeof document !== 'undefined') {
-    document.body.style.overflow = newStep === 2 ? 'hidden' : ''
-  }
   if (newStep === 2) {
     nextTick(() => {
       if (typeof window !== 'undefined') {
@@ -502,11 +494,10 @@ const handleSubmit = async () => {
 
 /* Step 2 */
 .step-two {
-  height: 100vh;
-  width: 100vw;
+  min-height: 100vh;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   background: #faf9f6;
 }
 
@@ -524,6 +515,7 @@ const handleSubmit = async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
 }
 
 .back-btn {
@@ -553,6 +545,9 @@ const handleSubmit = async () => {
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .project-title {
@@ -620,10 +615,16 @@ const handleSubmit = async () => {
 .editor-container {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   margin: 0 80px;
   background: #fff;
   border-left: 1px solid #e0e0e0;
   border-right: 1px solid #e0e0e0;
+}
+
+@media (max-width: 768px) {
+  .editor-container {
+    margin: 0 20px;
+  }
 }
 </style>

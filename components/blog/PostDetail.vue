@@ -118,8 +118,7 @@ const formatDate = (date: string) => {
 
 /* Left Column - Article Content */
 .content-column {
-  overflow-y: auto;
-  max-height: calc(100vh - 120px);
+  overflow: visible;
   padding-right: 20px;
 }
 

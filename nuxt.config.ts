@@ -37,6 +37,10 @@ export default defineNuxtConfig({
       ]
     }
   },
+  routeRules: {
+    '/notion': { redirect: { to: 'https://yuuki08noah.notion.site/159f0e77626a80a696fec9f4f58fc39b?source=copy_link', statusCode: 302 } },
+    '/notion/**': { redirect: { to: 'https://yuuki08noah.notion.site/159f0e77626a80a696fec9f4f58fc39b?source=copy_link', statusCode: 302 } }
+  },
 
   runtimeConfig: {
     // Server-only runtime config

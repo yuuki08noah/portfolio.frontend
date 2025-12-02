@@ -1,8 +1,10 @@
 <template>
   <div 
     class="editor-block-wrapper"
+    :data-block-id="blockId"
     :class="{ 
       'is-dragging': isDragging,
+      'is-selected': selected,
       'drop-top': dropPosition === 'top',
       'drop-bottom': dropPosition === 'bottom',
       'drop-left': dropPosition === 'left',
@@ -14,8 +16,9 @@
     @dragover.prevent="onDragOver"
     @dragleave="onDragLeave"
     @drop.stop="onDrop"
+    @click="onWrapperClick"
   >
-    <div class="block-handle" contenteditable="false">
+    <div class="block-handle" contenteditable="false" @click.stop="onHandleClick">
       <div class="handle-icon">⋮⋮</div>
     </div>
     <div class="block-content-area">
@@ -31,18 +34,30 @@ const props = defineProps<{
   blockId: string
   index: number
   parentId?: string
+  selected?: boolean
+  selectedIds?: string[]
 }>()
 
-const emit = defineEmits(['reorder', 'create-column', 'drag-start', 'drag-end'])
+const emit = defineEmits([
+  'reorder',
+  'create-column',
+  'drag-start',
+  'drag-end',
+  'open-settings',
+  'toggle-select',
+  'drag-hover'
+])
 
 const isDragging = ref(false)
 const dropPosition = ref<'top' | 'bottom' | 'left' | 'right' | null>(null)
 
 const onDragStart = (e: DragEvent) => {
   isDragging.value = true
+  const dragIds = props.selected && props.selectedIds?.length ? props.selectedIds : [props.blockId]
   if (e.dataTransfer) {
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('application/json', JSON.stringify({
+      ids: dragIds,
       id: props.blockId,
       index: props.index,
       parentId: props.parentId
@@ -55,9 +70,18 @@ const onDragEnd = () => {
   isDragging.value = false
   dropPosition.value = null
   emit('drag-end')
+  emit('drag-hover', null)
+}
+
+const onHandleClick = (e: MouseEvent) => {
+  // Open settings menu anchored to handle position
+  const rect = (e.currentTarget as HTMLElement | null)?.getBoundingClientRect?.() || null
+  emit('open-settings', { targetRect: rect, originalEvent: e })
 }
 
 const onDragOver = (e: DragEvent) => {
+  emit('drag-hover', e.clientY)
+
   const target = e.currentTarget as HTMLElement
   const rect = target.getBoundingClientRect()
   const x = e.clientX - rect.left
@@ -89,15 +113,24 @@ const onDrop = (e: DragEvent) => {
   
   const draggedBlock = JSON.parse(data)
   
-  if (draggedBlock.id === props.blockId) return
+  const draggedIds: string[] = draggedBlock.ids || [draggedBlock.id]
+  if (draggedIds.includes(props.blockId)) return
 
   emit('reorder', {
     draggedId: draggedBlock.id,
+    draggedIds,
     targetId: props.blockId,
     position: dropPosition.value
   })
   
   dropPosition.value = null
+}
+
+const onWrapperClick = (e: MouseEvent) => {
+  // Ignore clicks originating inside content-editable to not interfere with typing
+  const target = e.target as HTMLElement
+  if (target.closest('.content-block-input')) return
+  emit('toggle-select', e)
 }
 </script>
 
@@ -112,10 +145,16 @@ const onDrop = (e: DragEvent) => {
   border-radius: 4px;
   width: 100%;
   box-sizing: border-box;
+  font-family: var(--font-body, 'Inter', 'Helvetica Neue', Arial, sans-serif);
 }
 
 .editor-block-wrapper:hover {
   background-color: rgba(0, 0, 0, 0.02);
+}
+
+.editor-block-wrapper.is-selected {
+  background-color: #eef2ff;
+  border-left: 3px solid #6366f1;
 }
 
 .editor-block-wrapper:hover .block-handle {

@@ -164,29 +164,25 @@
                     :blockId="childBlock.id"
                     :index="childIndex"
                     :parentId="col.id"
+                    :selected="isSelected(childBlock.id)"
+                    :selectedIds="selectedBlockIds"
                     @reorder="handleReorder"
+                    @open-settings="handleDoubleColon($event, childBlock.id)"
+                    @toggle-select="toggleSelect(childBlock.id, $event)"
+                    @drag-hover="handleDragHover"
                   >
                     <ContentBlock
                       v-model="childBlock.content"
                       :class="childBlock.type"
                       :placeholder="getPlaceholder(childBlock.type)"
                       @enter="(e) => handleEnter(e, childBlock.id, col.id)"
-                      @backspace="handleBackspace(childBlock.id, col.id)"
+                      @backspace="(e) => handleBackspace(childBlock.id, col.id, e)"
                       @slash="handleSlash($event, childBlock.id)"
                       @double-colon="handleDoubleColon($event, childBlock.id)"
                     />
                   </EditorBlock>
                 </div>
 
-                <!-- Empty Column Drop Zone -->
-                <div 
-                  v-if="!col.children || col.children.length === 0" 
-                  class="empty-column-drop-zone"
-                  @dragover.prevent
-                  @drop="handleDropInEmptyColumn(col.id, $event)"
-                >
-                  Drop here
-                </div>
               </div>
               
               <!-- Resize Handle -->
@@ -203,17 +199,22 @@
             v-else
             :blockId="block.id"
             :index="index"
+            :selected="isSelected(block.id)"
+            :selectedIds="selectedBlockIds"
             @reorder="handleReorder"
+            @open-settings="handleDoubleColon($event, block.id)"
+            @toggle-select="toggleSelect(block.id, $event)"
+            @drag-hover="handleDragHover"
           >
             <!-- TOC Block Special Rendering -->
             <div v-if="block.type === 'toc'" class="toc-block" contenteditable="false">
-              <div class="toc-header">Table of Contents</div>
-              <div class="toc-content">
-                <div v-if="getHeadings().length === 0" class="toc-empty">
-                  No headings found. Add H1-H3 to see them here.
-                </div>
-                <div 
-                  v-for="heading in getHeadings()" 
+            <div class="toc-header">Table of Contents</div>
+            <div class="toc-content">
+              <div v-if="getHeadings().length === 0" class="toc-empty">
+                No headings found. Add H1-H6 to see them here.
+              </div>
+              <div 
+                v-for="heading in getHeadings()" 
                   :key="heading.id"
                   class="toc-item"
                   :class="`toc-${heading.type}`"
@@ -230,7 +231,7 @@
               :class="block.type"
               :placeholder="getPlaceholder(block.type)"
               @enter="(e) => handleEnter(e, block.id)"
-              @backspace="handleBackspace(block.id)"
+              @backspace="(e) => handleBackspace(block.id, undefined, e)"
               @slash="handleSlash($event, block.id)"
               @double-colon="handleDoubleColon($event, block.id)"
             />
@@ -290,9 +291,6 @@
 
       <!-- Preview Panel -->
       <div v-show="viewMode !== 'editor'" class="preview-panel">
-        <div class="preview-header">
-          <span>Preview</span>
-        </div>
         <div class="preview-content">
           <MarkdownRenderer :content="modelValue" />
         </div>
@@ -302,7 +300,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, nextTick, computed } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, nextTick, computed } from 'vue'
 import EditorBlock from './blocks/EditorBlock.vue'
 import ContentBlock from './blocks/ContentBlock.vue'
 import MarkdownRenderer from '~/components/blog/MarkdownRenderer.vue'
@@ -346,8 +344,12 @@ interface Setting {
 // --- State ---
 const blocks = ref<Block[]>([])
 const isInternalUpdate = ref(false)
+const isUndoing = ref(false)
 const editorWrapper = ref<HTMLElement | null>(null)
 const blocksList = ref<HTMLElement | null>(null)
+const skipEnsureNext = ref(false)
+const history = ref<Block[][]>([])
+const historyIndex = ref(-1)
 
 // Slash Menu
 const showSlashMenu = ref(false)
@@ -361,6 +363,68 @@ const showSettingsMenu = ref(false)
 const settingsMenuQuery = ref('')
 const selectedSettingIndex = ref(0)
 const settingsMenuPosition = ref({ top: 0, left: 0 })
+const selectedBlockIds = ref<string[]>([])
+const autoScrollDir = ref<0 | 1 | -1>(0)
+let autoScrollFrame: number | null = null
+const ensureColumnContent = () => {
+  const fill = (list: Block[]) => {
+    for (const b of list) {
+      if (b.type === 'column') {
+        if (!b.children || b.children.length === 0) {
+          b.children = [{
+            id: generateId(),
+            type: 'paragraph',
+            content: ''
+          }]
+        }
+      }
+      if (b.children) fill(b.children)
+    }
+  }
+  fill(blocks.value)
+}
+
+const pruneLayouts = (list: Block[]) => {
+  const normalizeRowWidths = (row: Block) => {
+    if (!row.children || row.children.length === 0) return
+    const n = row.children.length
+    const w = 100 / n
+    row.children.forEach(col => { col.width = w })
+  }
+
+  for (let i = list.length - 1; i >= 0; i--) {
+    const b = list[i]
+    if (b.children) {
+      pruneLayouts(b.children)
+    }
+
+    if (b.type === 'column') {
+      if (!b.children || b.children.length === 0) {
+        list.splice(i, 1)
+        continue
+      }
+    }
+
+    if (b.type === 'row') {
+      const cols = b.children || []
+      const filtered = cols.filter(col => col.children && col.children.length > 0)
+      b.children = filtered
+
+      if (!b.children || b.children.length === 0) {
+        list.splice(i, 1)
+        continue
+      }
+
+      if (b.children.length === 1) {
+        const onlyCol = b.children[0]
+        const childrenToLift = onlyCol.children || []
+        list.splice(i, 1, ...childrenToLift)
+      } else {
+        normalizeRowWidths(b)
+      }
+    }
+  }
+}
 
 const commands: Command[] = [
   // Text blocks
@@ -395,12 +459,248 @@ const settings: Setting[] = [
   // Links & Media
   { label: 'Link', desc: 'Add a hyperlink', icon: '🔗', action: 'link' },
   { label: 'Image', desc: 'Upload or embed image', icon: '🖼️', action: 'image' },
+  { label: 'Table of Contents', desc: 'Auto-generate headings list', icon: '📑', action: 'toc' },
   // Embeds
   { label: 'YouTube', desc: 'Embed YouTube video', icon: '▶️', action: 'youtube' },
   { label: 'Tweet', desc: 'Embed a tweet', icon: '🐦', action: 'tweet' },
   { label: 'CodePen', desc: 'Embed CodePen', icon: '✏️', action: 'codepen' },
   { label: 'GitHub Gist', desc: 'Embed a gist', icon: '📋', action: 'gist' }
 ]
+
+// --- Helpers for TOC / slugging ---
+const headingLevelMap: Record<Block['type'], number | undefined> = {
+  'heading-1': 1,
+  'heading-2': 2,
+  'heading-3': 3,
+  'heading-4': 4,
+  'heading-5': 5,
+  'heading-6': 6,
+  paragraph: undefined,
+  callout: undefined,
+  row: undefined,
+  column: undefined,
+  quote: undefined,
+  code: undefined,
+  'bulleted-list': undefined,
+  'numbered-list': undefined,
+  todo: undefined,
+  divider: undefined,
+  image: undefined,
+  table: undefined,
+  toc: undefined
+}
+
+const createSlugger = () => {
+  const counts: Record<string, number> = {}
+  return (text: string) => {
+    const base = text
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      || 'heading'
+    const count = (counts[base] || 0) + 1
+    counts[base] = count
+    return count > 1 ? `${base}-${count}` : base
+  }
+}
+
+const matchHeadingBlock = (block: Block): { level: number, text: string } | null => {
+  const levelFromType = headingLevelMap[block.type]
+  if (levelFromType) {
+    return { level: levelFromType, text: block.content || '' }
+  }
+  // Allow markdown-style headings even if block type is paragraph
+  const match = (block.content || '').match(/^(#{1,6})\s+(.+)/)
+  if (match) {
+    return { level: match[1].length, text: match[2] }
+  }
+  return null
+}
+
+const buildTocEntries = () => {
+  const slug = createSlugger()
+  const entries: Array<{ level: number; text: string; slug: string }> = []
+
+  const traverse = (list: Block[]) => {
+    for (const block of list) {
+      const heading = matchHeadingBlock(block)
+      if (heading) {
+        const text = heading.text || '(Empty Heading)'
+        entries.push({
+          level: heading.level,
+          text,
+          slug: slug(text)
+        })
+      }
+      if (block.children) traverse(block.children)
+    }
+  }
+
+  traverse(blocks.value)
+  return entries
+}
+
+const isSelected = (id: string) => selectedBlockIds.value.includes(id)
+
+const pushHistory = () => {
+  const snapshot = JSON.parse(JSON.stringify(blocks.value)) as Block[]
+  // Truncate future history if we've undone
+  if (historyIndex.value < history.value.length - 1) {
+    history.value = history.value.slice(0, historyIndex.value + 1)
+  }
+  history.value.push(snapshot)
+  historyIndex.value = history.value.length - 1
+}
+
+const undo = () => {
+  if (historyIndex.value <= 0) return
+  historyIndex.value -= 1
+  const snapshot = history.value[historyIndex.value]
+  if (!snapshot) return
+  isUndoing.value = true
+  blocks.value = JSON.parse(JSON.stringify(snapshot))
+  nextTick(() => {
+    isUndoing.value = false
+  })
+}
+
+const toggleSelect = (id: string, event?: MouseEvent) => {
+  const multi = event?.metaKey || event?.ctrlKey || event?.shiftKey
+  if (!multi) {
+    selectedBlockIds.value = [id]
+    return
+  }
+
+  if (selectedBlockIds.value.includes(id)) {
+    selectedBlockIds.value = selectedBlockIds.value.filter(bid => bid !== id)
+  } else {
+    selectedBlockIds.value = [...selectedBlockIds.value, id]
+  }
+}
+
+const clearSelection = () => {
+  selectedBlockIds.value = []
+}
+
+const removeBlocksByIds = (ids: string[]) => {
+  const removed: Block[] = []
+
+  const removeFromList = (list: Block[]) => {
+    for (let i = list.length - 1; i >= 0; i--) {
+      const b = list[i]
+      if (ids.includes(b.id)) {
+        removed.unshift(...list.splice(i, 1))
+      } else if (b.children) {
+        removeFromList(b.children)
+      }
+    }
+  }
+
+  removeFromList(blocks.value)
+  pruneLayouts(blocks.value)
+  skipEnsureNext.value = true
+
+  // Ensure at least one block remains
+  if (blocks.value.length === 0) {
+    addBlock('paragraph')
+  }
+
+  return removed
+}
+
+const onGlobalKeydown = (e: KeyboardEvent) => {
+  if (typeof document === 'undefined') return
+  const active = document.activeElement as HTMLElement | null
+
+  // Undo (Cmd/Ctrl + Z)
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+    e.preventDefault()
+    undo()
+    return
+  }
+
+  // Arrow navigation between selected blocks (when wrapper is selected, not contenteditable)
+  if (selectedBlockIds.value.length && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+    if (active?.closest('.content-block-input')) return
+    const ids = orderedBlockIds()
+    const currentId = selectedBlockIds.value[selectedBlockIds.value.length - 1]
+    const idx = ids.indexOf(currentId)
+    if (idx !== -1) {
+      const nextIdx = e.key === 'ArrowDown' ? Math.min(ids.length - 1, idx + 1) : Math.max(0, idx - 1)
+      const nextId = ids[nextIdx]
+      if (nextId && nextId !== currentId) {
+        e.preventDefault()
+        selectedBlockIds.value = [nextId]
+        focusBlockInput(nextId, e.key === 'ArrowDown')
+      }
+    }
+  }
+
+  // Delete selected blocks (only when focus is outside contenteditable)
+  if (selectedBlockIds.value.length && (e.key === 'Delete' || e.key === 'Backspace')) {
+    if (active?.closest('.content-block-input')) return
+    e.preventDefault()
+    removeBlocksByIds(selectedBlockIds.value)
+    clearSelection()
+    return
+  }
+}
+
+const stopAutoScroll = () => {
+  autoScrollDir.value = 0
+  if (autoScrollFrame !== null && typeof cancelAnimationFrame !== 'undefined') {
+    cancelAnimationFrame(autoScrollFrame)
+    autoScrollFrame = null
+  }
+}
+
+const autoScrollStep = () => {
+  if (!autoScrollDir.value) {
+    autoScrollFrame = null
+    return
+  }
+  const container = editorWrapper.value
+  const speed = 12 * autoScrollDir.value
+  if (container) {
+    container.scrollTop += speed
+  } else if (typeof window !== 'undefined') {
+    window.scrollBy(0, speed)
+  }
+  autoScrollFrame = requestAnimationFrame(autoScrollStep)
+}
+
+const startAutoScroll = (dir: 1 | -1 | 0) => {
+  if (dir === autoScrollDir.value) return
+  autoScrollDir.value = dir
+  if (dir === 0) {
+    stopAutoScroll()
+    return
+  }
+  if (autoScrollFrame === null && typeof requestAnimationFrame !== 'undefined') {
+    autoScrollFrame = requestAnimationFrame(autoScrollStep)
+  }
+}
+
+const handleDragHover = (clientY: number | null) => {
+  if (clientY === null) {
+    stopAutoScroll()
+    return
+  }
+  if (typeof document === 'undefined') return
+
+  const rect = editorWrapper.value?.getBoundingClientRect()
+  if (!rect) return
+
+  const threshold = 60
+  if (clientY < rect.top + threshold) {
+    startAutoScroll(-1)
+  } else if (clientY > rect.bottom - threshold) {
+    startAutoScroll(1)
+  } else {
+    startAutoScroll(0)
+  }
+}
 
 // --- Computed ---
 const filteredCommands = computed(() => {
@@ -430,6 +730,17 @@ onMounted(() => {
   } else {
     addBlock('paragraph')
   }
+  pushHistory()
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('keydown', onGlobalKeydown)
+  }
+})
+
+onBeforeUnmount(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('keydown', onGlobalKeydown)
+  }
 })
 
 watch(() => props.modelValue, (newVal) => {
@@ -446,6 +757,19 @@ watch(blocks, () => {
     isInternalUpdate.value = false
   })
 }, { deep: true })
+
+watch(blocks, () => {
+  if (skipEnsureNext.value) {
+    skipEnsureNext.value = false
+    return
+  }
+  ensureColumnContent()
+}, { deep: true, flush: 'post' })
+
+watch(blocks, () => {
+  if (isInternalUpdate.value || isUndoing.value) return
+  pushHistory()
+}, { deep: true, flush: 'post' })
 
 // --- Helpers ---
 const generateId = () => Math.random().toString(36).substr(2, 9)
@@ -520,7 +844,7 @@ const parseMarkdown = (text: string) => {
   blocks.value = newBlocks
 }
 
-const parseNode = (node: Node): Block | Block[] | null => {
+  const parseNode = (node: Node): Block | Block[] | null => {
   if (node.nodeType === Node.TEXT_NODE) {
     const content = node.textContent?.trim()
     if (!content) return null
@@ -571,9 +895,18 @@ const parseNode = (node: Node): Block | Block[] | null => {
         content: contentEl?.textContent?.trim() || el.textContent?.trim() || ''
       }
     }
+
+    // TOC
+    if (el.classList.contains('toc-block')) {
+      return {
+        id: generateId(),
+        type: 'toc',
+        content: ''
+      }
+    }
     
     // Headings (if passed as HTML)
-    if (['H1', 'H2', 'H3'].includes(el.tagName)) {
+    if (['H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(el.tagName)) {
       return {
         id: generateId(),
         type: `heading-${el.tagName.charAt(1)}` as any,
@@ -633,6 +966,16 @@ const serializeBlock = (block: Block): string => {
       return block.content || '| Column 1 | Column 2 |\n|----------|----------|\n| Cell 1   | Cell 2   |'
     case 'callout':
       return `<div class="callout"><span class="callout-icon">💡</span><div class="callout-content">${block.content}</div></div>`
+    case 'toc': {
+      const entries = buildTocEntries()
+      if (!entries.length) {
+        return `<div class="toc-block"><div class="toc-header">Table of Contents</div><div class="toc-empty">No headings found.</div></div>`
+      }
+      const items = entries.map(e => 
+        `<li class="toc-item toc-h${e.level}"><a href="#${e.slug}">${e.text}</a></li>`
+      ).join('')
+      return `<div class="toc-block"><div class="toc-header">Table of Contents</div><ul class="toc-list">${items}</ul></div>`
+    }
     default:
       return block.content
   }
@@ -701,6 +1044,7 @@ const handleEditorClick = (e: MouseEvent) => {
   
   // Check if clicked on editor-wrapper or blocks-list directly (not on a block)
   if (target === editorWrapper.value || target === blocksList.value) {
+    clearSelection()
     // Add a new paragraph block
     const newBlock: Block = {
       id: generateId(),
@@ -734,6 +1078,7 @@ const handleDrop = async (e: DragEvent) => {
   // Only handle if dropped on editor-wrapper or blocks-list directly
   if (target === editorWrapper.value || target === blocksList.value) {
     e.preventDefault()
+    clearSelection()
     
     // Handle files
     if (e.dataTransfer?.files.length) {
@@ -765,31 +1110,16 @@ const handleDrop = async (e: DragEvent) => {
       }
     }
     
-    const blockId = e.dataTransfer?.getData('text/plain')
-    if (!blockId) return
-    
-    // Find and remove the block from its current position
-    const removeBlock = (blockList: Block[]): Block | null => {
-      for (let i = 0; i < blockList.length; i++) {
-        if (blockList[i].id === blockId) {
-          return blockList.splice(i, 1)[0]
-        }
-        if (blockList[i].children) {
-          for (const col of blockList[i].children!) {
-            if (col.children) {
-              const found = removeBlock(col.children)
-              if (found) return found
-            }
-          }
-        }
-      }
-      return null
-    }
-    
-    const movedBlock = removeBlock(blocks.value)
-    if (movedBlock) {
-      // Add to end of blocks list
-      blocks.value.push(movedBlock)
+    const data = e.dataTransfer?.getData('application/json')
+    if (!data) return
+    const parsed = JSON.parse(data)
+    const idsToMove: string[] = parsed.ids && parsed.ids.length ? parsed.ids : [parsed.id || parsed.blockId].filter(Boolean)
+    if (!idsToMove.length) return
+
+    const movedBlocks = removeBlocksByIds(idsToMove)
+    if (movedBlocks.length) {
+      blocks.value.push(...movedBlocks)
+      selectedBlockIds.value = idsToMove
     }
   }
 }
@@ -818,6 +1148,8 @@ const handleEnter = (event: { afterText: string } | Event, blockId?: string, par
     }
     list.splice(index + 1, 0, newBlock)
     
+    selectedBlockIds.value = [newBlock.id]
+    
     // Focus the new block after rendering
     nextTick(() => {
       if (typeof document === 'undefined') return
@@ -838,6 +1170,7 @@ const handleEnter = (event: { afterText: string } | Event, blockId?: string, par
               range.collapse(true)
               sel?.removeAllRanges()
               sel?.addRange(range)
+              nextInput.scrollIntoView({ block: 'nearest' })
             }
           }
         }
@@ -846,12 +1179,106 @@ const handleEnter = (event: { afterText: string } | Event, blockId?: string, par
   }
 }
 
-const handleBackspace = (blockId: string, parentId?: string) => {
+const findPreviousBlock = (id: string) => {
+  let prev: Block | null = null
+  const walk = (list: Block[]): boolean => {
+    for (const b of list) {
+      // Only treat non-container blocks as "previous" content
+      if (b.type !== 'row' && b.type !== 'column') {
+        prev = b
+      }
+      if (b.id === id) return true
+      if (b.children && walk(b.children)) return true
+    }
+    return false
+  }
+  walk(blocks.value)
+  return prev
+}
+
+const orderedBlockIds = () => {
+  const ids: string[] = []
+  const traverse = (list: Block[]) => {
+    for (const b of list) {
+      if (b.type !== 'row' && b.type !== 'column') {
+        ids.push(b.id)
+      }
+      if (b.children) traverse(b.children)
+    }
+  }
+  traverse(blocks.value)
+  return ids
+}
+
+const focusBlockInput = (id: string, toEnd = true) => {
+  if (typeof document === 'undefined') return
+  const el = document.querySelector(`[data-block-id="${id}"] .content-block-input`) as HTMLElement | null
+  if (!el) return
+  el.focus()
+  const range = document.createRange()
+  range.selectNodeContents(el)
+  range.collapse(toEnd)
+  const sel = window.getSelection()
+  sel?.removeAllRanges()
+  sel?.addRange(range)
+  el.scrollIntoView({ block: 'nearest' })
+}
+
+const handleBackspace = (blockId: string, parentId?: string, payload?: any) => {
   const path = findBlockPath(blockId, blocks.value)
   if (path) {
     const { list, index } = path[path.length - 1]
     const block = list[index]
-    
+    const isMerge = payload && typeof payload === 'object' && payload.merge
+
+    // Merge with previous block when backspace at start
+    if (isMerge) {
+      // If there is a previous sibling in the same list
+      if (index > 0) {
+        const prevBlock = list[index - 1]
+        prevBlock.content = (prevBlock.content || '') + (block.content || '')
+        list.splice(index, 1)
+        pruneLayouts(blocks.value)
+        skipEnsureNext.value = true
+
+        nextTick(() => {
+          const prevEl = document.querySelector(`[data-block-id="${prevBlock.id}"] .content-block-input`) as HTMLElement | null
+          if (prevEl) {
+            prevEl.focus()
+            const range = document.createRange()
+            range.selectNodeContents(prevEl)
+            range.collapse(false)
+            const sel = window.getSelection()
+            sel?.removeAllRanges()
+            sel?.addRange(range)
+          }
+        })
+        return
+      }
+
+      // If first in list, find previous block in document order
+      const prev = findPreviousBlock(blockId)
+      if (prev) {
+        prev.content = (prev.content || '') + (block.content || '')
+        list.splice(index, 1)
+        pruneLayouts(blocks.value)
+        skipEnsureNext.value = true
+        nextTick(() => {
+          const prevEl = document.querySelector(`[data-block-id="${prev.id}"] .content-block-input`) as HTMLElement | null
+          if (prevEl) {
+            prevEl.focus()
+            const range = document.createRange()
+            range.selectNodeContents(prevEl)
+            range.collapse(false)
+            const sel = window.getSelection()
+            sel?.removeAllRanges()
+            sel?.addRange(range)
+          }
+        })
+        return
+      }
+    }
+
     // Delete block if content is empty
     if (block.content === '' || block.content.trim() === '') {
       if (list.length > 1) {
@@ -955,13 +1382,11 @@ const handleSlash = (event: Event, blockId: string) => {
   
   const target = event.target as HTMLElement
   const rect = target.getBoundingClientRect()
-  const wrapperRect = editorWrapper.value?.getBoundingClientRect() || { top: 0, left: 0 }
-  const scrollTop = editorWrapper.value?.scrollTop || 0
   
   activeBlockId.value = blockId
   slashMenuPosition.value = {
-    top: (rect.bottom - wrapperRect.top) + scrollTop + 5,
-    left: (rect.left - wrapperRect.left)
+    top: rect.bottom + 5,
+    left: rect.left
   }
   
   showSlashMenu.value = true
@@ -1018,18 +1443,42 @@ const executeCommand = (command: Command) => {
 }
 
 // --- Settings Menu (::) ---
-const handleDoubleColon = (event: Event, blockId: string) => {
+type RectLike = { top: number, left: number, bottom: number, right: number }
+type DoubleColonPayload = Event | { targetRect?: RectLike | null, selectionRect?: RectLike | null, originalEvent?: Event }
+
+const resolveRect = (payload: DoubleColonPayload, blockId: string): RectLike | null => {
+  if (typeof document === 'undefined') return null
+
+  // Prefer selection rect (cursor location)
+  if (!(payload instanceof Event) && payload?.selectionRect) {
+    return payload.selectionRect
+  }
+  // Fallback to target rect sent from child
+  if (!(payload instanceof Event) && payload?.targetRect) {
+    return payload.targetRect
+  }
+  // Fallback to event target
+  const event = payload instanceof Event ? payload : payload.originalEvent
+  const target = event?.target as HTMLElement | null
+  if (target?.getBoundingClientRect) {
+    return target.getBoundingClientRect()
+  }
+  // Final fallback: query the block element
+  const el = document.querySelector(`[data-block-id="${blockId}"] .content-block-input`) as HTMLElement | null
+  return el?.getBoundingClientRect() || null
+}
+
+const handleDoubleColon = (payload: DoubleColonPayload, blockId: string) => {
   if (typeof document === 'undefined') return
   
-  const target = event.target as HTMLElement
-  const rect = target.getBoundingClientRect()
-  const wrapperRect = editorWrapper.value?.getBoundingClientRect() || { top: 0, left: 0 }
-  const scrollTop = editorWrapper.value?.scrollTop || 0
+  const rect = resolveRect(payload, blockId)
+  if (!rect) return
   
+  closeSlashMenu()
   activeBlockId.value = blockId
   settingsMenuPosition.value = {
-    top: (rect.bottom - wrapperRect.top) + scrollTop + 5,
-    left: (rect.left - wrapperRect.left)
+    top: rect.bottom + 5,
+    left: rect.left
   }
   
   showSettingsMenu.value = true
@@ -1094,6 +1543,10 @@ const executeSetting = (setting: Setting) => {
       case 'inline-code':
         block.content += '`code`'
         break
+      case 'toc':
+        block.type = 'toc'
+        block.content = ''
+        break
       case 'link':
         const linkUrl = prompt('Enter URL:')
         const linkText = prompt('Enter link text:') || linkUrl
@@ -1111,9 +1564,11 @@ const executeSetting = (setting: Setting) => {
       case 'youtube':
         const youtubeUrl = prompt('Enter YouTube URL:')
         if (youtubeUrl) {
-          const videoId = youtubeUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s]+)/)?.[1]
+          const videoId = youtubeUrl.match(/(?:v=|youtu\.be\/|embed\/)([^&\s?#]+)/)?.[1]
           if (videoId) {
-            block.content += `\n<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>\n`
+            block.content += `\n<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>\n`
+          } else {
+            block.content += `\n${youtubeUrl}\n`
           }
         }
         break
@@ -1142,81 +1597,33 @@ const executeSetting = (setting: Setting) => {
 }
 
 // --- Drag & Drop Logic (Advanced) ---
-const handleReorder = ({ draggedId, targetId, position }: { draggedId: string, targetId: string, position: string }) => {
-  // 1. Find dragged block
-  const draggedPath = findBlockPath(draggedId, blocks.value)
-  if (!draggedPath) return
+const handleReorder = ({ draggedId, draggedIds, targetId, position }: { draggedId: string, draggedIds?: string[], targetId: string, position: string }) => {
+  const idsToMove = draggedIds && draggedIds.length ? draggedIds : [draggedId]
+  if (idsToMove.includes(targetId)) return
+
+  const movedBlocks = removeBlocksByIds(idsToMove)
+  if (movedBlocks.length === 0) return
   
-  const { list: sourceList, index: sourceIndex } = draggedPath[draggedPath.length - 1]
-  const [draggedBlock] = sourceList.splice(sourceIndex, 1)
-  
-  // 2. Find target block
   const targetPath = findBlockPath(targetId, blocks.value)
-  if (!targetPath) {
-    sourceList.splice(sourceIndex, 0, draggedBlock) // Revert
-    return
-  }
+  if (!targetPath) return
   
   const { list: targetList, index: targetIndex } = targetPath[targetPath.length - 1]
   const targetBlock = targetList[targetIndex]
   
-  // 3. Handle Drop
   if (position === 'top') {
-    targetList.splice(targetIndex, 0, draggedBlock)
+    targetList.splice(targetIndex, 0, ...movedBlocks)
   } else if (position === 'bottom') {
-    targetList.splice(targetIndex + 1, 0, draggedBlock)
+    targetList.splice(targetIndex + 1, 0, ...movedBlocks)
   } else if (position === 'left' || position === 'right') {
-    // N-Column Logic
-    
-    // Case A: Target is already inside a Column?
-    // We need to check if we are dropping ON a column or ON a block inside a column.
-    // The `targetId` is the block ID.
-    
-    // Check if target is inside a column (i.e. parent is a column)
-    // We can check the path.
-    const parentBlock = targetPath.length > 1 ? targetPath[targetPath.length - 2].list : null
-    // Actually, `list` is the array, we need the block object.
-    // Let's look at the parent structure.
-    
-    // Easier: Check if targetList is a child of a 'column' block.
-    // But we don't have easy access to parent type here without traversing up.
-    // However, if we are creating a split, we generally want to:
-    // 1. If target is NOT in a Row: Create Row(Col(Target), Col(Dragged))
-    // 2. If target IS in a Row (so it's inside a Col):
-    //    - If we drop Left/Right, do we want to split THAT column? (Nested Row)
-    //    - OR do we want to add a column to the PARENT Row?
-    //    - Notion does: If you drop on the edge of a block in a column, it adds a column to the parent row.
-    
-    // Let's implement "Add Column to Parent Row" if possible, else "Create New Row".
-    
-    // We need to find the Parent Row if it exists.
-    // In our structure: Row -> Column -> Block.
-    // So if target is a Block, its parent list is Column.children.
-    // The Column's parent list is Row.children.
-    
-    const isTargetInColumn = targetPath.length >= 2 
-      // We can't easily verify type without looking up, but based on depth:
-      // Depth 1: Root -> Block (Not in column)
-      // Depth 2: Root -> Row -> Column (Not quite, Row has children=Columns)
-      // Depth 3: Root -> Row -> Column -> Block (In column)
-      
-      // Let's assume depth check:
-      // Path[0]: { list: blocks.value, index: ... } (Root)
-      // Path[1]: { list: row.children, index: ... } (Column)
-      // Path[2]: { list: col.children, index: ... } (Block)
-      
     if (targetPath.length >= 3) {
-      // Target is inside a Column.
-      // We want to add a new Column to the Row (Path[1].list is the Row's children)
       const rowChildren = targetPath[targetPath.length - 2].list
       const colIndexInRow = targetPath[targetPath.length - 2].index
       
-      // Insert new column
       const newCol: Block = {
         id: generateId(),
         type: 'column',
         content: '',
-        children: [draggedBlock]
+        children: [...movedBlocks]
       }
       
       if (position === 'left') {
@@ -1225,7 +1632,6 @@ const handleReorder = ({ draggedId, targetId, position }: { draggedId: string, t
         rowChildren.splice(colIndexInRow + 1, 0, newCol)
       }
     } else {
-      // Target is at Root (or not in a column). Create new Row.
       const newRow: Block = {
         id: generateId(),
         type: 'row',
@@ -1235,31 +1641,31 @@ const handleReorder = ({ draggedId, targetId, position }: { draggedId: string, t
             id: generateId(), 
             type: 'column', 
             content: '', 
-            children: position === 'left' ? [draggedBlock] : [targetBlock] 
+            children: position === 'left' ? [...movedBlocks] : [targetBlock] 
           },
           { 
             id: generateId(), 
             type: 'column', 
             content: '', 
-            children: position === 'left' ? [targetBlock] : [draggedBlock] 
+            children: position === 'left' ? [targetBlock] : [...movedBlocks] 
           }
         ]
       }
       targetList.splice(targetIndex, 1, newRow)
     }
   }
+
+  selectedBlockIds.value = idsToMove
 }
 
 const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
   const data = e.dataTransfer?.getData('application/json')
   if (!data) return
-  const { id: draggedId } = JSON.parse(data)
+  const { id: draggedId, ids } = JSON.parse(data)
+  const idsToMove = ids && ids.length ? ids : [draggedId]
   
-  const draggedPath = findBlockPath(draggedId, blocks.value)
-  if (!draggedPath) return
-  
-  const { list: sourceList, index: sourceIndex } = draggedPath[draggedPath.length - 1]
-  const [draggedBlock] = sourceList.splice(sourceIndex, 1)
+  const movedBlocks = removeBlocksByIds(idsToMove)
+  if (movedBlocks.length === 0) return
   
   const findColumn = (list: Block[]): Block | null => {
     for (const b of list) {
@@ -1274,8 +1680,10 @@ const handleDropInEmptyColumn = (colId: string, e: DragEvent) => {
   
   const colBlock = findColumn(blocks.value)
   if (colBlock && colBlock.children) {
-    colBlock.children.push(draggedBlock)
+    colBlock.children.push(...movedBlocks)
   }
+
+  selectedBlockIds.value = idsToMove
 }
 
 // --- Column Resizing ---
@@ -1356,11 +1764,12 @@ const stopColumnResize = () => {
 
 // --- TOC Helpers ---
 const getHeadings = () => {
-  const headings: Block[] = []
+  const headings: Array<Block & { level?: number }> = []
   const traverse = (list: Block[]) => {
     for (const block of list) {
-      if (['heading-1', 'heading-2', 'heading-3'].includes(block.type)) {
-        headings.push(block)
+      const heading = matchHeadingBlock(block)
+      if (heading) {
+        headings.push({ ...block, level: heading.level })
       }
       if (block.children) {
         traverse(block.children)
@@ -1376,6 +1785,7 @@ const scrollToBlock = (id: string) => {
   if (el) {
     el.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
+
 }
 
 </script>
@@ -1390,14 +1800,18 @@ const scrollToBlock = (id: string) => {
   color: #333;
 }
 
+
+
 /* View Toggle */
 .view-toggle {
   display: flex;
   justify-content: center;
-  gap: 1px;
-  background: #f0f0f0;
+  gap: 4px;
+  background: #f5f5f5;
   padding: 4px;
-  border-bottom: 1px solid #e0e0e0;
+  border-radius: 8px;
+  width: fit-content;
+  margin: 0 auto; /* Center the toggle group */
 }
 
 .toggle-btn {
@@ -1408,19 +1822,18 @@ const scrollToBlock = (id: string) => {
   font-weight: 500;
   color: #666;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
   transition: all 0.2s;
 }
 
 .toggle-btn:hover {
   color: #111;
-  background: rgba(0,0,0,0.05);
 }
 
 .toggle-btn.active {
   background: #fff;
   color: #111;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 /* Editor Main Area */
@@ -1527,7 +1940,7 @@ const scrollToBlock = (id: string) => {
 .editor-wrapper {
   flex: 1;
   overflow-y: auto;
-  padding: 40px 60px; /* Generous padding */
+  padding: 24px 20px 12px;
   cursor: text;
 }
 
@@ -1553,20 +1966,11 @@ const scrollToBlock = (id: string) => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #fafafa; /* Slightly different bg for preview */
+  background: #ffffff; /* White bg for preview */
   overflow: hidden;
 }
 
-.preview-header {
-  padding: 8px 16px;
-  background: #f9f9f9;
-  border-bottom: 1px solid #eee;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #999;
-  text-align: center;
-}
+
 
 .preview-content {
   flex: 1;
@@ -1604,21 +2008,10 @@ const scrollToBlock = (id: string) => {
   background: #d1d5db;
 }
 
-.empty-column-drop-zone {
-  height: 60px;
-  border: 2px dashed #eee;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ccc;
-  font-size: 13px;
-}
-
 /* Menus */
 .slash-menu, .settings-menu {
   position: fixed;
-  z-index: 100;
+  z-index: 9999;
   background: #fff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;

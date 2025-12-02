@@ -38,6 +38,8 @@ export default defineNuxtConfig({
     }
   },
   routeRules: {
+    '/notion/study': { redirect: { to: 'https://yuuki08noah.notion.site/7971dd0e4c3741d887fb690ccd4906cf?source=copy_link', statusCode: 302 } },
+    '/notion/study/**': { redirect: { to: 'https://yuuki08noah.notion.site/7971dd0e4c3741d887fb690ccd4906cf?source=copy_link', statusCode: 302 } },
     '/notion': { redirect: { to: 'https://yuuki08noah.notion.site/159f0e77626a80a696fec9f4f58fc39b?source=copy_link', statusCode: 302 } },
     '/notion/**': { redirect: { to: 'https://yuuki08noah.notion.site/159f0e77626a80a696fec9f4f58fc39b?source=copy_link', statusCode: 302 } },
     '/velog': { redirect: { to: 'https://velog.io/@yuuki08noah/posts', statusCode: 302 } },

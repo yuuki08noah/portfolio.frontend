@@ -7,8 +7,25 @@ export const useMarkdown = () => {
     gfm: true
   })
 
+  const createSlugger = () => {
+    const counts: Record<string, number> = {}
+    return (text: string) => {
+      const base = text
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        || 'heading'
+      const count = (counts[base] || 0) + 1
+      counts[base] = count
+      return count > 1 ? `${base}-${count}` : base
+    }
+  }
+
   const renderMarkdown = (markdown: string): string => {
     if (!markdown) return ''
+
+    const slug = createSlugger()
 
     // For content with layout HTML (from our editor), preserve HTML and process markdown
     if (markdown.includes('layout-row') || markdown.includes('layout-col') || markdown.includes('layout-grid-2') || markdown.includes('callout')) {
@@ -22,7 +39,7 @@ export const useMarkdown = () => {
         // If it's an HTML tag, keep it as-is
         if (part.startsWith('<')) return part
         // Otherwise, process as markdown
-        return processInlineMarkdown(part)
+        return processInlineMarkdown(part, slug)
       }).join('')
 
       return html
@@ -30,7 +47,14 @@ export const useMarkdown = () => {
 
     // Use marked for full markdown processing
     try {
-      return marked.parse(markdown) as string
+      let html = marked.parse(markdown) as string
+      // Inject ids into headings for anchor support
+      html = html.replace(/<h([1-6])>(.*?)<\/h\1>/g, (_, level, text) => {
+        const cleanText = text.replace(/<[^>]+>/g, '')
+        const id = slug(cleanText)
+        return `<h${level} id="${id}">${text}</h${level}>`
+      })
+      return html
     } catch (e) {
       console.error('Markdown parsing error:', e)
       return markdown
@@ -38,18 +62,18 @@ export const useMarkdown = () => {
   }
 
   // Process inline markdown elements only (for mixed HTML/markdown content)
-  const processInlineMarkdown = (text: string): string => {
+  const processInlineMarkdown = (text: string, slug: (text: string) => string): string => {
     if (!text.trim()) return text
 
     let html = text
 
     // Headings
-    html = html.replace(/^######\s+(.*)$/gm, '<h6>$1</h6>')
-    html = html.replace(/^#####\s+(.*)$/gm, '<h5>$1</h5>')
-    html = html.replace(/^####\s+(.*)$/gm, '<h4>$1</h4>')
-    html = html.replace(/^###\s+(.*)$/gm, '<h3>$1</h3>')
-    html = html.replace(/^##\s+(.*)$/gm, '<h2>$1</h2>')
-    html = html.replace(/^#\s+(.*)$/gm, '<h1>$1</h1>')
+    html = html.replace(/^######\s+(.*)$/gm, (_, t) => `<h6 id="${slug(t)}">${t}</h6>`)
+    html = html.replace(/^#####\s+(.*)$/gm,  (_, t) => `<h5 id="${slug(t)}">${t}</h5>`)
+    html = html.replace(/^####\s+(.*)$/gm,   (_, t) => `<h4 id="${slug(t)}">${t}</h4>`)
+    html = html.replace(/^###\s+(.*)$/gm,    (_, t) => `<h3 id="${slug(t)}">${t}</h3>`)
+    html = html.replace(/^##\s+(.*)$/gm,     (_, t) => `<h2 id="${slug(t)}">${t}</h2>`)
+    html = html.replace(/^#\s+(.*)$/gm,      (_, t) => `<h1 id="${slug(t)}">${t}</h1>`)
 
     // Code blocks
     html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {

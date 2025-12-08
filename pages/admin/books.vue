@@ -40,11 +40,11 @@
           <div v-show="activeLang === 'en'">
             <div class="form-field">
               <label class="form-label">Title (EN) *</label>
-              <input v-model="form.title" type="text" class="form-input" required />
+              <input v-model="form.title" type="text" class="form-input" />
             </div>
             <div class="form-field">
               <label class="form-label">Author (EN) *</label>
-              <input v-model="form.author" type="text" class="form-input" required />
+              <input v-model="form.author" type="text" class="form-input" />
             </div>
             <div class="form-field">
               <label class="form-label">Review (EN)</label>
@@ -236,14 +236,22 @@ const editBook = (book: Book) => {
 }
 
 const saveBook = async () => {
+  // Manual Validation
+  if (!form.value.title || !form.value.author) {
+    alert('Please enter Title and Author in English tab.')
+    activeLang.value = 'en'
+    return
+  }
+
+  console.log('saveBook called. Form data:', form.value)
   try {
     const data = {
       title: form.value.title,
       author: form.value.author,
       status: form.value.status,
-      rating: form.value.rating,
-      start_date: form.value.startDate || null,
-      end_date: form.value.endDate || null,
+      rating: form.value.rating || undefined,
+      start_date: form.value.startDate || undefined,
+      end_date: form.value.endDate || undefined,
       cover_image: form.value.coverImage,
       review: form.value.review,
       translations: {
@@ -259,9 +267,10 @@ const saveBook = async () => {
     }
     closeModal()
     await loadBooks()
-  } catch (e) {
+  } catch (e: any) {
     console.error('Failed to save book', e)
-    alert('Failed to save book')
+    const message = e.data?.errors?.join(', ') || e.data?.message || e.message || 'Failed to save book'
+    alert(`Error: ${message}`)
   }
 }
 

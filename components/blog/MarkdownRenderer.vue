@@ -24,6 +24,8 @@ const renderedMarkdown = computed(() => renderMarkdown(props.content))
   line-height: 1.75;
   color: #374151;
   font-family: var(--font-body, 'Inter', 'Helvetica Neue', Arial, sans-serif);
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 /* Headings */

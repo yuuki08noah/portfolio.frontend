@@ -13,6 +13,7 @@ export const useReading = () => {
   }
 
   const createBook = async (book: Partial<Book>) => {
+    console.log('useReading: createBook called', book)
     return await post<{ data: Book }>('/api/v1/reading/books', book)
   }
 

@@ -17,7 +17,7 @@ export const useApi = () => {
   // Get locale-prefixed endpoint for content APIs
   const getLocalizedEndpoint = (endpoint: string, useLocale = false): string => {
     if (!useLocale) return endpoint
-    
+
     // Content APIs that support localization
     const localizablePatterns = [
       '/portfolio/',
@@ -25,7 +25,7 @@ export const useApi = () => {
       '/travel/',
       '/site_settings'
     ]
-    
+
     const isLocalizable = localizablePatterns.some(pattern => endpoint.startsWith(pattern))
     if (isLocalizable) {
       return `/api/v1/${locale.value}${endpoint}`
@@ -60,31 +60,32 @@ export const useApi = () => {
 
     const finalEndpoint = getLocalizedEndpoint(endpoint, localized)
     // Ensure endpoint starts with /api/v1 if not already
-    const normalizedEndpoint = finalEndpoint.startsWith('/api/v1') 
-      ? finalEndpoint 
+    const normalizedEndpoint = finalEndpoint.startsWith('/api/v1')
+      ? finalEndpoint
       : `/api/v1${finalEndpoint.startsWith('/') ? '' : '/'}${finalEndpoint}`
     const url = `${apiBase}${normalizedEndpoint}`
+    console.log('useApi: Fetching URL:', url, 'Options:', fetchOptions)
     return await $fetch<T>(url, fetchOptions)
   }
 
   // Convenience methods
-  const get = <T>(endpoint: string, auth = true, localized = false) => 
+  const get = <T>(endpoint: string, auth = true, localized = false) =>
     $api<T>(endpoint, { method: 'GET', auth, localized })
 
-  const post = <T>(endpoint: string, body?: any, auth = true) => 
+  const post = <T>(endpoint: string, body?: any, auth = true) =>
     $api<T>(endpoint, { method: 'POST', body, auth })
 
-  const put = <T>(endpoint: string, body?: any, auth = true) => 
+  const put = <T>(endpoint: string, body?: any, auth = true) =>
     $api<T>(endpoint, { method: 'PUT', body, auth })
 
-  const patch = <T>(endpoint: string, body?: any, auth = true) => 
+  const patch = <T>(endpoint: string, body?: any, auth = true) =>
     $api<T>(endpoint, { method: 'PATCH', body, auth })
 
-  const del = <T>(endpoint: string, auth = true) => 
+  const del = <T>(endpoint: string, auth = true) =>
     $api<T>(endpoint, { method: 'DELETE', auth })
 
   // Localized get (for content that needs i18n)
-  const getLocalized = <T>(endpoint: string, auth = true) => 
+  const getLocalized = <T>(endpoint: string, auth = true) =>
     $api<T>(endpoint, { method: 'GET', auth, localized: true })
 
   return {

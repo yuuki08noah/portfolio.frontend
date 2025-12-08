@@ -39,13 +39,13 @@ body {
   --color-bg: #FFFFFF;
   --color-white: #FFFFFF;
   --color-black: #000000;
-  
+
   --color-border: #E0E0E0;
   --color-border-dark: #000000;
-  
+
   /* Accent is now Black for a sharp look */
-  --color-accent: #000000; 
-  
+  --color-accent: #000000;
+
   --color-muted: #666666;
   --color-light-gray: #F9F9F9;
   --color-medium-gray: #CCCCCC;
@@ -57,26 +57,44 @@ body {
   --color-info: #0D47A1;
 
   /* Spacing - Editorial Grid */
-  --spacing-xs: 0.5rem;   /* 8px */
-  --spacing-sm: 0.75rem;  /* 12px */
-  --spacing-md: 1rem;     /* 16px */
-  --spacing-lg: 1.5rem;   /* 24px */
-  --spacing-xl: 2rem;     /* 32px */
-  --spacing-2xl: 3rem;    /* 48px */
-  --spacing-3xl: 5rem;    /* 80px */
-  --spacing-4xl: 8rem;    /* 128px */
+  --spacing-xs: 0.5rem;
+  /* 8px */
+  --spacing-sm: 0.75rem;
+  /* 12px */
+  --spacing-md: 1rem;
+  /* 16px */
+  --spacing-lg: 1.5rem;
+  /* 24px */
+  --spacing-xl: 2rem;
+  /* 32px */
+  --spacing-2xl: 3rem;
+  /* 48px */
+  --spacing-3xl: 5rem;
+  /* 80px */
+  --spacing-4xl: 8rem;
+  /* 128px */
 
   /* Typography Scale - Dramatic Hierarchy */
-  --text-xs: 0.75rem;     /* 12px */
-  --text-sm: 0.875rem;    /* 14px */
-  --text-base: 1rem;      /* 16px */
-  --text-lg: 1.125rem;    /* 18px */
-  --text-xl: 1.375rem;    /* 22px */
-  --text-2xl: 1.75rem;    /* 28px */
-  --text-3xl: 2.5rem;     /* 40px */
-  --text-4xl: 3.5rem;     /* 56px */
-  --text-5xl: 4.5rem;     /* 72px */
-  --text-6xl: 6rem;       /* 96px */
+  --text-xs: 0.75rem;
+  /* 12px */
+  --text-sm: 0.875rem;
+  /* 14px */
+  --text-base: 1rem;
+  /* 16px */
+  --text-lg: 1.125rem;
+  /* 18px */
+  --text-xl: 1.375rem;
+  /* 22px */
+  --text-2xl: 1.75rem;
+  /* 28px */
+  --text-3xl: 2.5rem;
+  /* 40px */
+  --text-4xl: 3.5rem;
+  /* 56px */
+  --text-5xl: 4.5rem;
+  /* 72px */
+  --text-6xl: 6rem;
+  /* 96px */
 
   /* Layout */
   --max-width: 1400px;
@@ -104,7 +122,12 @@ body {
 }
 
 /* ========== Typography - Editorial Style ========== */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-heading);
   font-weight: 700;
   line-height: 1.1;
@@ -143,7 +166,6 @@ p {
   font-size: var(--text-base);
   line-height: 1.8;
   color: var(--color-text);
-  max-width: 38em; /* Optimal reading width */
 }
 
 a {
@@ -220,7 +242,8 @@ select {
   color: var(--color-text);
   transition: all var(--transition-fast);
   width: 100%;
-  border-radius: var(--radius-none); /* Sharp corners */
+  border-radius: var(--radius-none);
+  /* Sharp corners */
 }
 
 input:focus,
@@ -232,12 +255,29 @@ select:focus {
 }
 
 /* ========== Utility Classes ========== */
-.text-muted { color: var(--color-muted); }
-.text-small { font-size: var(--text-sm); }
-.text-uppercase { text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+.text-muted {
+  color: var(--color-muted);
+}
 
-.border-top { border-top: 1px solid var(--color-border); padding-top: var(--spacing-lg); }
-.border-bottom { border-bottom: 1px solid var(--color-border); padding-bottom: var(--spacing-lg); }
+.text-small {
+  font-size: var(--text-sm);
+}
+
+.text-uppercase {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.border-top {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--spacing-lg);
+}
+
+.border-bottom {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--spacing-lg);
+}
 
 /* ========== Responsive ========== */
 @media (max-width: 1024px) {

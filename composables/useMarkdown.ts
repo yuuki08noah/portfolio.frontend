@@ -3,7 +3,7 @@ import { marked } from 'marked'
 export const useMarkdown = () => {
   // Configure marked options
   marked.setOptions({
-    breaks: true,
+    breaks: false,
     gfm: true
   })
 
@@ -38,8 +38,14 @@ export const useMarkdown = () => {
       html = parts.map(part => {
         // If it's an HTML tag, keep it as-is
         if (part.startsWith('<')) return part
-        // Otherwise, process as markdown
-        return processInlineMarkdown(part, slug)
+        // Otherwise, process as markdown using marked
+        // We use parse but need to be careful about block wrapping if inside existing tags
+        // For simplicity in this hybrid mode, let's use marked.parse which handles everything better than manual regex
+        try {
+          return marked.parse(part)
+        } catch (e) {
+          return part
+        }
       }).join('')
 
       return html
@@ -69,11 +75,11 @@ export const useMarkdown = () => {
 
     // Headings
     html = html.replace(/^######\s+(.*)$/gm, (_, t) => `<h6 id="${slug(t)}">${t}</h6>`)
-    html = html.replace(/^#####\s+(.*)$/gm,  (_, t) => `<h5 id="${slug(t)}">${t}</h5>`)
-    html = html.replace(/^####\s+(.*)$/gm,   (_, t) => `<h4 id="${slug(t)}">${t}</h4>`)
-    html = html.replace(/^###\s+(.*)$/gm,    (_, t) => `<h3 id="${slug(t)}">${t}</h3>`)
-    html = html.replace(/^##\s+(.*)$/gm,     (_, t) => `<h2 id="${slug(t)}">${t}</h2>`)
-    html = html.replace(/^#\s+(.*)$/gm,      (_, t) => `<h1 id="${slug(t)}">${t}</h1>`)
+    html = html.replace(/^#####\s+(.*)$/gm, (_, t) => `<h5 id="${slug(t)}">${t}</h5>`)
+    html = html.replace(/^####\s+(.*)$/gm, (_, t) => `<h4 id="${slug(t)}">${t}</h4>`)
+    html = html.replace(/^###\s+(.*)$/gm, (_, t) => `<h3 id="${slug(t)}">${t}</h3>`)
+    html = html.replace(/^##\s+(.*)$/gm, (_, t) => `<h2 id="${slug(t)}">${t}</h2>`)
+    html = html.replace(/^#\s+(.*)$/gm, (_, t) => `<h1 id="${slug(t)}">${t}</h1>`)
 
     // Code blocks
     html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {

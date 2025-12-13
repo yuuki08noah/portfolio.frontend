@@ -16,50 +16,67 @@
 <style scoped>
 .sidebar-left {
   font-family: var(--font-body);
+  border-right: 1px solid rgba(0,0,0,0.06);
+  height: 100%;
+  padding-right: var(--spacing-xl);
 }
 
 .sidebar-section {
-  margin-bottom: var(--spacing-xl);
+  margin-bottom: var(--spacing-3xl);
 }
 
 .sidebar-title {
-  font-family: var(--font-body);
-  font-size: var(--text-xs);
-  font-weight: 700;
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: #111;
-  margin-bottom: var(--spacing-md);
-  padding-bottom: var(--spacing-xs);
-  border-bottom: 1px solid #666;
+  letter-spacing: 0.2em;
+  color: #999;
+  margin-bottom: 24px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #000;
+  display: inline-block;
+  min-width: 60px;
 }
 
 .nav-list {
   list-style: none;
   padding: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .nav-list li {
-  margin-bottom: var(--spacing-xs);
+  margin: 0;
 }
 
 .nav-list a {
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 600;
+  color: #666;
   text-decoration: none;
   display: block;
-  padding: var(--spacing-xs) 0;
-  border-bottom: 1px solid transparent;
-  transition: all var(--transition-fast);
+  padding: 10px 16px;
+  border-left: 3px solid transparent;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  background: transparent;
+  border-radius: 0 4px 4px 0;
 }
 
-.nav-list a:hover,
+.nav-list a:hover {
+  color: #000;
+  background: rgba(0,0,0,0.03);
+  padding-left: 20px;
+}
+
 .nav-list a.active {
-  color: var(--color-black);
-  border-bottom-color: var(--color-black);
-  background: none;
-  padding-left: var(--spacing-xs);
+  color: #000;
+  border-left-color: #000;
+  background: rgba(0,0,0,0.05);
+  padding-left: 20px;
+  font-weight: 700;
 }
 </style>

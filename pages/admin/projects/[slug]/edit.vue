@@ -24,16 +24,106 @@
         <form @submit.prevent="saveBasicInfo" class="info-form">
           <div v-if="error" class="error-message">{{ error }}</div>
 
+          <div class="lang-tabs">
+            <button 
+              type="button" 
+              class="lang-tab" 
+              :class="{ active: activeLang === 'en' }" 
+              @click="activeLang = 'en'"
+            >
+              English (Default)
+            </button>
+            <button 
+              type="button" 
+              class="lang-tab" 
+              :class="{ active: activeLang === 'ko' }" 
+              @click="activeLang = 'ko'"
+            >
+              Korean
+            </button>
+            <button 
+              type="button" 
+              class="lang-tab" 
+              :class="{ active: activeLang === 'ja' }" 
+              @click="activeLang = 'ja'"
+            >
+              Japanese
+            </button>
+          </div>
+
           <div class="form-grid">
-            <div class="form-field full-width">
-              <label for="title">Project Title *</label>
-              <input id="title" v-model="form.title" type="text" required maxlength="100" placeholder="Enter project title" />
-            </div>
+            <!-- English Title/Desc -->
+            <template v-if="activeLang === 'en'">
+              <div class="form-field full-width">
+                <label for="title">Project Title (English) *</label>
+                <input id="title" v-model="form.title" type="text" required maxlength="100" placeholder="Enter project title" />
+              </div>
+
+              <div class="form-field full-width">
+                <label for="description">Description (English) *</label>
+                <textarea id="description" v-model="form.description" required maxlength="1000" rows="3" placeholder="Brief description shown on project card"></textarea>
+                <span class="char-count">{{ form.description.length }}/1000</span>
+              </div>
+            </template>
+
+            <!-- Korean Title/Desc -->
+            <template v-if="activeLang === 'ko'">
+              <div class="form-field full-width">
+                <label for="title_ko">Project Title (Korean)</label>
+                <input id="title_ko" v-model="form.translations.ko.title" type="text" maxlength="100" placeholder="Enter Korean title" />
+              </div>
+
+              <div class="form-field full-width">
+                <label for="description_ko">Description (Korean)</label>
+                <textarea id="description_ko" v-model="form.translations.ko.description" maxlength="1000" rows="3" placeholder="Enter Korean description"></textarea>
+                <span class="char-count">{{ form.translations.ko.description.length }}/1000</span>
+              </div>
+            </template>
+
+            <!-- Japanese Title/Desc -->
+            <template v-if="activeLang === 'ja'">
+              <div class="form-field full-width">
+                <label for="title_ja">Project Title (Japanese)</label>
+                <input id="title_ja" v-model="form.translations.ja.title" type="text" maxlength="100" placeholder="Enter Japanese title" />
+              </div>
+
+              <div class="form-field full-width">
+                <label for="description_ja">Description (Japanese)</label>
+                <textarea id="description_ja" v-model="form.translations.ja.description" maxlength="1000" rows="3" placeholder="Enter Japanese description"></textarea>
+                <span class="char-count">{{ form.translations.ja.description.length }}/1000</span>
+              </div>
+            </template>
 
             <div class="form-field full-width">
-              <label for="description">Description *</label>
-              <textarea id="description" v-model="form.description" required maxlength="1000" rows="3" placeholder="Brief description shown on project card"></textarea>
-              <span class="char-count">{{ form.description.length }}/1000</span>
+              <label>Banner Image</label>
+              <div class="banner-upload">
+                <div v-if="form.cover_image" class="banner-preview">
+                  <img :src="form.cover_image" alt="Banner preview" />
+                  <button type="button" class="banner-remove" @click="form.cover_image = ''">×</button>
+                </div>
+                <div v-else class="banner-placeholder">
+                  <span>No banner image</span>
+                </div>
+                <div class="banner-actions">
+                  <input
+                    ref="bannerInput"
+                    type="file"
+                    accept="image/*"
+                    style="display: none"
+                    @change="handleBannerUpload"
+                  />
+                  <button type="button" class="btn-upload" @click="($refs.bannerInput as HTMLInputElement)?.click()" :disabled="uploadingBanner">
+                    {{ uploadingBanner ? 'Uploading...' : 'Upload Image' }}
+                  </button>
+                  <span class="banner-hint">or paste image URL below</span>
+                  <input
+                    v-model="form.cover_image"
+                    type="url"
+                    placeholder="https://example.com/image.jpg"
+                    class="banner-url-input"
+                  />
+                </div>
+              </div>
             </div>
 
             <div class="form-field full-width">
@@ -146,19 +236,29 @@ const { fetchProject, updateProject, fetchProjectDocs, updateProjectDoc } = useP
 const step = ref(1)
 const loading = ref(true)
 const loadError = ref<string | null>(null)
+
+const activeLang = ref<'en' | 'ko' | 'ja'>('en')
+
 const form = reactive({
   title: '',
   description: '',
+  cover_image: '',
   start_date: '',
   end_date: '',
   is_ongoing: false,
   stack: [] as string[],
   demo_url: '',
   repo_url: '',
-  overview_content: ''
+  overview_content: '',
+  translations: {
+    ko: { title: '', description: '' },
+    ja: { title: '', description: '' }
+  }
 })
-const overviewDocId = ref<string | null>(null)
 
+const overviewDocId = ref<string | null>(null)
+const bannerInput = ref<HTMLInputElement | null>(null)
+const uploadingBanner = ref(false)
 const newStack = ref('')
 const error = ref<string | null>(null)
 const submitting = ref(false)
@@ -166,12 +266,15 @@ const draftSaved = ref(false)
 
 const getDraftKey = () => `project_draft_edit_${slug.value}`
 
+// ...
+
 const loadDraft = () => {
   if (process.client) {
     const saved = localStorage.getItem(getDraftKey())
     if (saved) {
       try {
         const data = JSON.parse(saved)
+        // ... load data logic ...
         form.title = data.title || ''
         form.description = data.description || ''
         form.start_date = data.start_date || ''
@@ -181,6 +284,14 @@ const loadDraft = () => {
         form.demo_url = data.demo_url || ''
         form.repo_url = data.repo_url || ''
         form.overview_content = data.overview_content || ''
+        if (data.translations) {
+            form.translations = data.translations
+        } else {
+             form.translations = {
+                ko: { title: '', description: '' },
+                ja: { title: '', description: '' }
+             }
+        }
         return true
       } catch (e) {
         console.error('Failed to load draft:', e)
@@ -225,12 +336,27 @@ const loadProject = async () => {
     const project = projectResponse.project
     form.title = project.title || ''
     form.description = project.description || ''
+    form.cover_image = project.coverImage || ''
     form.start_date = project.start_date || ''
     form.end_date = project.end_date || ''
     form.is_ongoing = project.is_ongoing || false
     form.stack = Array.isArray(project.stack) ? project.stack : []
     form.demo_url = project.links?.demo || ''
     form.repo_url = project.links?.repo || ''
+    
+    // Load translations
+    if (project.translations) {
+      form.translations = {
+        ko: { 
+          title: project.translations.ko?.title || '', 
+          description: project.translations.ko?.description || '' 
+        },
+        ja: { 
+          title: project.translations.ja?.title || '', 
+          description: project.translations.ja?.description || '' 
+        }
+      }
+    }
 
     // Load overview doc
     const overviewDoc = docsResponse.docs?.find((d: any) => d.category === 'overview')
@@ -245,28 +371,9 @@ const loadProject = async () => {
   }
 }
 
-onMounted(() => {
-  loadProject()
-})
-
-onUnmounted(() => {
-  // no-op
-})
-
-watch(step, (newStep) => {
-  if (newStep === 2) {
-    nextTick(() => {
-      if (typeof window !== 'undefined') {
-        window.scrollTo(0, 0)
-      }
-    })
-  }
-})
-
 const addStack = () => {
-  const tech = newStack.value.trim()
-  if (tech && !form.stack.includes(tech)) {
-    form.stack.push(tech)
+  if (newStack.value.trim()) {
+    form.stack.push(newStack.value.trim())
     newStack.value = ''
   }
 }
@@ -276,11 +383,42 @@ const removeStack = (idx: number) => {
 }
 
 const goToStep2 = () => {
-  error.value = null
-  if (!form.title.trim()) { error.value = 'Title is required'; return }
-  if (!form.description.trim()) { error.value = 'Description is required'; return }
-  if (form.stack.length === 0) { error.value = 'At least one technology is required'; return }
+  if (!form.title || !form.description) {
+    error.value = 'Title and description are required.'
+    return
+  }
   step.value = 2
+}
+
+const handleBannerUpload = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  if (!input.files || input.files.length === 0) return
+  
+  uploadingBanner.value = true
+  try {
+    const file = input.files[0]
+    const formData = new FormData()
+    formData.append('file', file)
+    
+    const token = useCookie<string>('auth_token').value || ''
+    const config = useRuntimeConfig()
+    
+    const response = await $fetch<{ url: string }>('/api/v1/uploads', {
+      baseURL: config.public.apiBase,
+      method: 'POST',
+      body: formData,
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    
+    form.cover_image = response.url
+  } catch (e: any) {
+    error.value = 'Failed to upload banner: ' + (e.message || 'Unknown error')
+  } finally {
+    uploadingBanner.value = false
+    if (bannerInput.value) bannerInput.value.value = ''
+  }
 }
 
 const saveDraft = () => {
@@ -288,6 +426,7 @@ const saveDraft = () => {
     const data = {
       title: form.title,
       description: form.description,
+      cover_image: form.cover_image,
       start_date: form.start_date,
       end_date: form.end_date,
       is_ongoing: form.is_ongoing,
@@ -295,6 +434,7 @@ const saveDraft = () => {
       demo_url: form.demo_url,
       repo_url: form.repo_url,
       overview_content: form.overview_content,
+      translations: form.translations,
       savedAt: new Date().toISOString()
     }
     localStorage.setItem(getDraftKey(), JSON.stringify(data))
@@ -302,6 +442,8 @@ const saveDraft = () => {
     setTimeout(() => { draftSaved.value = false }, 2000)
   }
 }
+
+// ...
 
 // Save basic info only (Step 1)
 const saveBasicInfo = async () => {
@@ -312,12 +454,23 @@ const saveBasicInfo = async () => {
     const data = {
       title: form.title.trim(),
       description: form.description.trim(),
+      cover_image: form.cover_image.trim() || undefined,
       stack: form.stack,
       demo_url: form.demo_url.trim() || undefined,
       repo_url: form.repo_url.trim() || undefined,
       start_date: form.start_date || undefined,
       end_date: form.is_ongoing ? undefined : (form.end_date || undefined),
-      is_ongoing: form.is_ongoing
+      is_ongoing: form.is_ongoing,
+      translations: {
+        ko: {
+          title: form.translations.ko.title.trim() || undefined,
+          description: form.translations.ko.description.trim() || undefined
+        },
+        ja: {
+          title: form.translations.ja.title.trim() || undefined,
+          description: form.translations.ja.description.trim() || undefined
+        }
+      }
     }
 
     await updateProject(slug.value, data)
@@ -339,12 +492,23 @@ const handleSubmit = async () => {
     const data = {
       title: form.title.trim(),
       description: form.description.trim(),
+      cover_image: form.cover_image.trim() || undefined,
       stack: form.stack,
       demo_url: form.demo_url.trim() || undefined,
       repo_url: form.repo_url.trim() || undefined,
       start_date: form.start_date || undefined,
       end_date: form.is_ongoing ? undefined : (form.end_date || undefined),
-      is_ongoing: form.is_ongoing
+      is_ongoing: form.is_ongoing,
+      translations: {
+        ko: {
+          title: form.translations.ko.title.trim() || undefined,
+          description: form.translations.ko.description.trim() || undefined
+        },
+        ja: {
+          title: form.translations.ja.title.trim() || undefined,
+          description: form.translations.ja.description.trim() || undefined
+        }
+      }
     }
 
     await updateProject(slug.value, data)
@@ -355,8 +519,10 @@ const handleSubmit = async () => {
         content: form.overview_content.trim()
       })
     }
-
+    
+    // Clear draft if successful
     clearDraft()
+
     router.push('/admin/projects')
   } catch (e: any) {
     error.value = e.data?.message || 'Failed to update project'
@@ -526,6 +692,114 @@ const handleSubmit = async () => {
   color: #999;
   text-align: right;
   font-family: var(--font-body);
+}
+
+/* Banner Image Upload */
+.banner-upload {
+  border: 1px solid #e0e0e0;
+  padding: 16px;
+  background: #fafafa;
+}
+
+.banner-preview {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 16 / 10;
+  margin-bottom: 12px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.banner-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.banner-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.banner-remove:hover {
+  background: rgba(200, 0, 0, 0.8);
+}
+
+.banner-placeholder {
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 16 / 10;
+  background: #f0f0f0;
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  color: #999;
+  font-family: var(--font-body);
+}
+
+.banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-upload {
+  padding: 8px 16px;
+  background: #111;
+  color: #fff;
+  border: 1px solid #111;
+  font-family: var(--font-body);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-upload:hover:not(:disabled) {
+  background: #333;
+}
+
+.btn-upload:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.banner-hint {
+  color: #999;
+  font-size: 13px;
+  font-family: var(--font-body);
+}
+
+.banner-url-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  font-size: 14px;
+  font-family: var(--font-body);
+}
+
+.banner-url-input:focus {
+  outline: none;
+  border-color: #111;
 }
 
 .tags-input {
@@ -838,5 +1112,38 @@ const handleSubmit = async () => {
   .editor-container {
     margin: 0 20px;
   }
+}
+</style>
+
+<style scoped>
+/* Language Tabs - reusing/scoped style */
+.lang-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding-bottom: 1rem;
+}
+
+.lang-tab {
+  background: transparent;
+  border: 1px solid #ddd;
+  color: #666;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.lang-tab:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.lang-tab.active {
+  background: #111;
+  border-color: #111;
+  color: white;
 }
 </style>

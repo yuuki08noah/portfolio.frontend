@@ -530,7 +530,6 @@ const formatDate = (date: string) => {
   width: 100%;
   height: auto;
   border-radius: 2px;
-  filter: saturate(0.7) brightness(0.95) contrast(0.95);
 }
 
 .sidebar-section {

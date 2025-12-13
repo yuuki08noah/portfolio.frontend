@@ -61,7 +61,12 @@
                 
                 <article v-if="featuredProject" class="section-card">
                   <div class="card-image-wrapper">
-                    <img :src="featuredProject.thumbnail_url || '/images/projects-visual.png'" alt="Projects" class="card-image" />
+                    <img 
+                      :src="featuredProject.coverImage || '/images/projects-visual.png'" 
+                      :alt="featuredProject.title" 
+                      class="card-image"
+                      @error="handleImageError"
+                    />
                   </div>
                   <div class="card-content">
                     <div class="card-meta">
@@ -120,7 +125,7 @@ interface Project {
   summary?: string
   description?: string
   category?: string
-  thumbnail_url?: string
+  coverImage?: string
   featured?: boolean
 }
 
@@ -151,6 +156,13 @@ const loadData = async () => {
     console.error('Failed to load data:', e)
   } finally {
     loading.value = false
+  }
+}
+
+const handleImageError = (e: Event) => {
+  const target = e.target as HTMLImageElement
+  if (target.src !== '/images/projects-visual.png') {
+    target.src = '/images/projects-visual.png'
   }
 }
 
@@ -237,17 +249,14 @@ onMounted(loadData)
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: grayscale(100%) contrast(1.1);
   transition: filter 0.3s ease;
 }
 
 .section-card:hover .card-image {
-  filter: grayscale(0%) contrast(1);
+  /* filter removed */
 }
 
 .card-content {
-  display: flex;
-  flex-direction: column;
   gap: var(--spacing-sm);
 }
 

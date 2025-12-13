@@ -12,17 +12,75 @@
         <form @submit.prevent="goToStep2" class="info-form">
           <div v-if="error" class="error-message">{{ error }}</div>
 
-          <div class="form-grid">
-            <div class="form-field full-width">
-              <label for="title">Project Title *</label>
-              <input id="title" v-model="form.title" type="text" required maxlength="100" placeholder="Enter project title" />
-            </div>
+          <div class="lang-tabs">
+            <button 
+              type="button" 
+              class="lang-tab" 
+              :class="{ active: activeLang === 'en' }" 
+              @click="activeLang = 'en'"
+            >
+              English (Default)
+            </button>
+            <button 
+              type="button" 
+              class="lang-tab" 
+              :class="{ active: activeLang === 'ko' }" 
+              @click="activeLang = 'ko'"
+            >
+              Korean
+            </button>
+            <button 
+              type="button" 
+              class="lang-tab" 
+              :class="{ active: activeLang === 'ja' }" 
+              @click="activeLang = 'ja'"
+            >
+              Japanese
+            </button>
+          </div>
 
-            <div class="form-field full-width">
-              <label for="description">Description *</label>
-              <textarea id="description" v-model="form.description" required maxlength="1000" rows="3" placeholder="Brief description shown on project card"></textarea>
-              <span class="char-count">{{ form.description.length }}/1000</span>
-            </div>
+          <div class="form-grid">
+            <!-- English Title/Desc -->
+            <template v-if="activeLang === 'en'">
+              <div class="form-field full-width">
+                <label for="title">Project Title (English) *</label>
+                <input id="title" v-model="form.title" type="text" required maxlength="100" placeholder="Enter project title" />
+              </div>
+
+              <div class="form-field full-width">
+                <label for="description">Description (English) *</label>
+                <textarea id="description" v-model="form.description" required maxlength="1000" rows="3" placeholder="Brief description shown on project card"></textarea>
+                <span class="char-count">{{ form.description.length }}/1000</span>
+              </div>
+            </template>
+
+            <!-- Korean Title/Desc -->
+            <template v-if="activeLang === 'ko'">
+              <div class="form-field full-width">
+                <label for="title_ko">Project Title (Korean)</label>
+                <input id="title_ko" v-model="form.translations.ko.title" type="text" maxlength="100" placeholder="Enter Korean title" />
+              </div>
+
+              <div class="form-field full-width">
+                <label for="description_ko">Description (Korean)</label>
+                <textarea id="description_ko" v-model="form.translations.ko.description" maxlength="1000" rows="3" placeholder="Enter Korean description"></textarea>
+                <span class="char-count">{{ form.translations.ko.description.length }}/1000</span>
+              </div>
+            </template>
+
+            <!-- Japanese Title/Desc -->
+            <template v-if="activeLang === 'ja'">
+              <div class="form-field full-width">
+                <label for="title_ja">Project Title (Japanese)</label>
+                <input id="title_ja" v-model="form.translations.ja.title" type="text" maxlength="100" placeholder="Enter Japanese title" />
+              </div>
+
+              <div class="form-field full-width">
+                <label for="description_ja">Description (Japanese)</label>
+                <textarea id="description_ja" v-model="form.translations.ja.description" maxlength="1000" rows="3" placeholder="Enter Japanese description"></textarea>
+                <span class="char-count">{{ form.translations.ja.description.length }}/1000</span>
+              </div>
+            </template>
 
             <div class="form-field full-width">
               <label>Tech Stack *</label>
@@ -125,6 +183,9 @@ definePageMeta({
 const router = useRouter()
 const { createProject, createProjectDoc } = useProjects()
 
+
+// ... imports
+const activeLang = ref<'en' | 'ko' | 'ja'>('en')
 const step = ref(1)
 const form = reactive({
   title: '',
@@ -135,7 +196,11 @@ const form = reactive({
   stack: [] as string[],
   demo_url: '',
   repo_url: '',
-  overview_content: ''
+  overview_content: '',
+  translations: {
+    ko: { title: '', description: '' },
+    ja: { title: '', description: '' }
+  }
 })
 
 const newStack = ref('')
@@ -160,6 +225,16 @@ const loadDraft = () => {
         form.demo_url = data.demo_url || ''
         form.repo_url = data.repo_url || ''
         form.overview_content = data.overview_content || ''
+        // Load translations if available
+        if (data.translations) {
+          form.translations = data.translations
+        } else {
+          // Initialize if missing from draft
+           form.translations = {
+            ko: { title: '', description: '' },
+            ja: { title: '', description: '' }
+          }
+        }
         return true
       } catch (e) {
         console.error('Failed to load draft:', e)
@@ -169,53 +244,12 @@ const loadDraft = () => {
   return false
 }
 
-const clearDraft = () => {
-  if (process.client) {
-    localStorage.removeItem(DRAFT_KEY)
-  }
-}
-
-onMounted(() => {
-  loadDraft()
-})
-
-onUnmounted(() => {
-  // no-op
-})
-
-watch(step, (newStep) => {
-  if (newStep === 2) {
-    nextTick(() => {
-      if (typeof window !== 'undefined') {
-        window.scrollTo(0, 0)
-      }
-    })
-  }
-})
-
-const addStack = () => {
-  const tech = newStack.value.trim()
-  if (tech && !form.stack.includes(tech)) {
-    form.stack.push(tech)
-    newStack.value = ''
-  }
-}
-
-const removeStack = (idx: number) => {
-  form.stack.splice(idx, 1)
-}
-
-const goToStep2 = () => {
-  error.value = null
-  if (!form.title.trim()) { error.value = 'Title is required'; return }
-  if (!form.description.trim()) { error.value = 'Description is required'; return }
-  if (form.stack.length === 0) { error.value = 'At least one technology is required'; return }
-  step.value = 2
-}
+// ...
 
 const saveDraft = () => {
   if (process.client) {
     const data = {
+      // ... existing fields
       title: form.title,
       description: form.description,
       start_date: form.start_date,
@@ -225,12 +259,38 @@ const saveDraft = () => {
       demo_url: form.demo_url,
       repo_url: form.repo_url,
       overview_content: form.overview_content,
+      translations: form.translations,
       savedAt: new Date().toISOString()
     }
     localStorage.setItem(DRAFT_KEY, JSON.stringify(data))
     draftSaved.value = true
     setTimeout(() => { draftSaved.value = false }, 2000)
   }
+}
+
+const clearDraft = () => {
+  if (process.client) {
+    localStorage.removeItem(DRAFT_KEY)
+  }
+}
+
+const addStack = () => {
+  if (newStack.value.trim()) {
+    form.stack.push(newStack.value.trim())
+    newStack.value = ''
+  }
+}
+
+const removeStack = (idx: number) => {
+  form.stack.splice(idx, 1)
+}
+
+const goToStep2 = () => {
+  if (!form.title || !form.description) {
+    error.value = 'Title and description are required.'
+    return
+  }
+  step.value = 2
 }
 
 const handleSubmit = async () => {
@@ -246,10 +306,21 @@ const handleSubmit = async () => {
       repo_url: form.repo_url.trim() || undefined,
       start_date: form.start_date || undefined,
       end_date: form.is_ongoing ? undefined : (form.end_date || undefined),
-      is_ongoing: form.is_ongoing
+      is_ongoing: form.is_ongoing,
+      translations: {
+        ko: {
+          title: form.translations.ko.title.trim() || undefined,
+          description: form.translations.ko.description.trim() || undefined
+        },
+        ja: {
+          title: form.translations.ja.title.trim() || undefined,
+          description: form.translations.ja.description.trim() || undefined
+        }
+      }
     }
 
     const response = await createProject(data)
+    // ... rest of logic
     const projectSlug = response.project.slug
 
     if (form.overview_content.trim()) {
@@ -626,5 +697,38 @@ const handleSubmit = async () => {
   .editor-container {
     margin: 0 20px;
   }
+}
+</style>
+
+<style scoped>
+/* Language Tabs - reusing/scoped style */
+.lang-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding-bottom: 1rem;
+}
+
+.lang-tab {
+  background: transparent;
+  border: 1px solid #ddd;
+  color: #666;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.lang-tab:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.lang-tab.active {
+  background: #111;
+  border-color: #111;
+  color: white;
 }
 </style>

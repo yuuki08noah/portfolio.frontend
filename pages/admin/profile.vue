@@ -623,13 +623,17 @@ interface ProfileForm {
   translations: ProfileTranslations
 }
 
-const { get, put } = useApi()
+const { get, put, post, del } = useApi()
+const config = useRuntimeConfig()
 
-const loading = ref(true)
+const activeLang = ref<'en' | 'ko' | 'ja'>('en')
+const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
 const successMessage = ref('')
-const activeLang = ref<'en' | 'ko' | 'ja'>('en')
+const avatarPreview = ref<string | null>(null)
+const avatarInput = ref<HTMLInputElement | null>(null)
+const avatarUploading = ref(false)
 
 const form = reactive<ProfileForm>({
   name: '',
@@ -673,50 +677,39 @@ const form = reactive<ProfileForm>({
   }
 })
 
-// Avatar upload
-const config = useRuntimeConfig()
-const avatarInput = ref<HTMLInputElement | null>(null)
-const avatarPreview = ref<string | null>(null)
-const avatarUploading = ref(false)
+const handleAvatarChange = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  if (input.files && input.files[0]) {
+    const file = input.files[0]
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      avatarPreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+    // Upload
+    avatarUploading.value = true
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      
+      const response = await post<{ url: string }>('/api/v1/uploads', formData)
+      if (response && response.url) {
+        form.avatar_url = response.url
+      }
+    } catch (e) {
+      console.error(e)
+      alert(i18n[activeLang.value]?.uploadError || 'Upload failed')
+    } finally {
+      avatarUploading.value = false
+    }
+  }
+}
 
 const triggerAvatarUpload = () => {
   avatarInput.value?.click()
 }
 
-const handleAvatarChange = async (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (!file) return
-
-  // Preview
-  avatarPreview.value = URL.createObjectURL(file)
-  avatarUploading.value = true
-  error.value = ''
-
-  try {
-    const formData = new FormData()
-    formData.append('avatar', file)
-
-    const token = localStorage.getItem('auth_token')
-    const response = await $fetch<{ avatar_url: string }>(`${config.public.backendApiBase}/api/v1/users/1/avatar`, {
-      method: 'POST',
-      body: formData,
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
-    })
-
-    form.avatar_url = response.avatar_url
-    avatarPreview.value = null
-  } catch (e: any) {
-    console.error('Avatar upload failed:', e)
-    error.value = t.value.uploadError
-    avatarPreview.value = null
-  } finally {
-    avatarUploading.value = false
-    if (target) target.value = ''
-  }
-}
-
-const removeAvatar = async () => {
+const removeAvatar = () => {
   form.avatar_url = ''
   avatarPreview.value = null
 }
@@ -725,66 +718,64 @@ const loadProfile = async () => {
   loading.value = true
   error.value = ''
   try {
-    const response = await get<{ profile: any }>('/api/v1/portfolio/profile')
-    if (response?.profile) {
-      const awards = response.profile.awards || []
+    const data = await get<{ profile: any }>('/api/v1/portfolio/profile')
+    if (data && data.profile) {
+      const p = data.profile
+      form.name = p.name || ''
+      form.tagline = p.tagline || ''
+      form.bio = p.bio || ''
+      form.job_position = p.job_position || ''
+      form.location_country = p.location_country || ''
+      form.location_city = p.location_city || ''
+      form.contact_email = p.email || ''
+      form.phone = p.phone || ''
+      form.github_url = p.github_url || ''
+      form.linkedin_url = p.linkedin_url || ''
+      form.website_url = p.website_url || ''
+      form.avatar_url = p.avatar_url || ''
+      form.skills = p.skills || []
+      form.values = p.values || []
+      form.external_links = p.external_links || []
+      form.certifications = p.certifications || []
       
-      Object.assign(form, {
-        ...response.profile,
-        contact_email: response.profile.email || '',
-        avatar_url: response.profile.avatar_url || '',
-        skills: response.profile.skills || [],
-        values: response.profile.values || [],
-        external_links: response.profile.external_links || [],
-        certifications: response.profile.certifications || [],
-        awards: {
-          en: awards.filter((a: any) => !a.translations?.ko?.title && !a.translations?.ja?.title).map((award: any) => ({
-            id: award.id,
-            name: award.name,
-            issuer: award.issuer,
-            date: award.date,
-            url: award.url,
-            description: award.description
-          })),
-          ko: awards.filter((a: any) => a.translations?.ko?.title).map((award: any) => ({
-            id: award.id,
-            name: award.translations.ko.title,
-            issuer: award.translations.ko.organization,
-            date: award.date,
-            url: award.url,
-            description: award.translations.ko.description
-          })),
-          ja: awards.filter((a: any) => a.translations?.ja?.title).map((award: any) => ({
-            id: award.id,
-            name: award.translations.ja.title,
-            issuer: award.translations.ja.organization,
-            date: award.date,
-            url: award.url,
-            description: award.translations.ja.description
-          }))
-        },
-        translations: {
-          ko: {
-            name: response.profile.translations?.ko?.name || '',
-            bio: response.profile.translations?.ko?.bio || '',
-            tagline: response.profile.translations?.ko?.tagline || '',
-            job_position: response.profile.translations?.ko?.job_position || '',
-            location_city: response.profile.translations?.ko?.location_city || '',
-            location_country: response.profile.translations?.ko?.location_country || ''
-          },
-          ja: {
-            name: response.profile.translations?.ja?.name || '',
-            bio: response.profile.translations?.ja?.bio || '',
-            tagline: response.profile.translations?.ja?.tagline || '',
-            job_position: response.profile.translations?.ja?.job_position || '',
-            location_city: response.profile.translations?.ja?.location_city || '',
-            location_country: response.profile.translations?.ja?.location_country || ''
-          }
-        }
-      })
+      if (p.translations) {
+        if (p.translations.ko) Object.assign(form.translations.ko, p.translations.ko)
+        if (p.translations.ja) Object.assign(form.translations.ja, p.translations.ja)
+      }
+
+      if (p.awards) {
+        form.awards.en = p.awards.map((a: any) => ({
+          id: a.id,
+          name: a.name,
+          issuer: a.issuer,
+          date: a.date,
+          url: a.url,
+          description: a.description,
+          _destroy: false
+        }))
+        form.awards.ko = p.awards.map((a: any) => ({
+          id: a.id,
+          name: a.translations?.ko?.title || '', 
+          issuer: a.translations?.ko?.organization || '',
+          date: a.date,
+          url: a.url,
+          description: a.translations?.ko?.description || '',
+          _destroy: false
+        }))
+        form.awards.ja = p.awards.map((a: any) => ({
+          id: a.id,
+          name: a.translations?.ja?.title || '', 
+          issuer: a.translations?.ja?.organization || '',
+          date: a.date,
+          url: a.url,
+          description: a.translations?.ja?.description || '',
+          _destroy: false
+        }))
+      }
     }
-  } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : i18n[activeLang.value].loadError
+  } catch (e) {
+    console.error(e)
+    error.value = i18n[activeLang.value].loadError
   } finally {
     loading.value = false
   }
@@ -795,55 +786,124 @@ const handleSubmit = async () => {
   successMessage.value = ''
   error.value = ''
   try {
-    const allAwards = [
-      ...form.awards.en.map(award => ({
-        id: award.id,
-        title: award.name,
-        organization: award.issuer,
-        date: award.date,
-        badge_image: award.url,
-        description: award.description,
-        _destroy: award._destroy
-      })),
-      ...form.awards.ko.map(award => ({
-        id: award.id,
-        title: award.name,
-        organization: award.issuer,
-        date: award.date,
-        badge_image: award.url,
-        description: award.description,
-        _destroy: award._destroy,
-        translations: {
-          ko: {
-            title: award.name,
-            organization: award.issuer,
-            description: award.description
-          }
-        }
-      })),
-      ...form.awards.ja.map(award => ({
-        id: award.id,
-        title: award.name,
-        organization: award.issuer,
-        date: award.date,
-        badge_image: award.url,
-        description: award.description,
-        _destroy: award._destroy,
-        translations: {
-          ja: {
-            title: award.name,
-            organization: award.issuer,
-            description: award.description
-          }
-        }
-      }))
-    ]
-
+    // 1. Save Profile (excluding awards)
+    const { awards: _awards, ...profilePayload } = form
+    // Remove awards from payload to avoid nested attributes conflict
+    // Also remove any other fields not meant for profile update if necessary
+    
+    // We need to reconstruct the payload without 'awards' key, or set it to undefined/empty if backend ignores it
+    // But since backend might still have accepts_nested_attributes_for, sending it empty might be safer or just removing it.
+    // Let's create a clean payload.
+    
     const payload = {
-      ...form,
-      awards_attributes: allAwards
+      ...profilePayload,
+      awards_attributes: undefined // Ensure we don't send this
     }
+    
+    // Update Profile First
     await put('/api/v1/portfolio/profile', payload)
+    
+    // 2. Process Awards
+    // Merge all awards from different language views to find unique awards by ID or new ones
+    // Actually, 'form.awards' splits them by language view, but they reference the same objects? 
+    // No, existing awards are mapped from response. New awards are objects created in frontend.
+    
+    // Let's collect all operations
+    const operations: (() => Promise<any>)[] = []
+    
+    // Helper to process awards from a list
+    const processAwardsList = (list: Award[], lang: 'en' | 'ko' | 'ja') => {
+      for (const award of list) {
+        if (award._destroy && award.id) {
+          // Delete existing (only need to do once)
+           // Check if already queued for deletion to avoid duplicates if same award shown in multiple tabs (unlikely with current UI but good practice)
+           // Actually UI shows separate lists. Wait, is it one list filtered?
+           // The UI does `form.awards.en`, `form.awards.ko` etc. 
+           // In `loadProfile`, they are split: `awards.filter(...)`.
+           // So if I add an award in EN, it is ONLY in EN list.
+           // If I add translation, I probably didn't implement "Link this EN award to KO". 
+           // The current UI assumes "Awards in English" are independent? 
+           // Wait, `loadProfile` logic:
+           // en: `!ko.title && !ja.title` -> English only awards?
+           // ko: `ko.title` -> Korean awards?
+           
+           // The previous logic seemed to try to separate them physically.
+           // "English Awards" = Awards that have English title? or just base?
+           // The Request said "Awards 추가할 때".
+           // If user adds Award in "Korean" tab, it sends { translations: { ko: ... } }.
+           
+           // Strategy:
+           // Iterate all lists.
+           // If ID exists:
+           //   If _destroy: DELETE /awards/:id
+           //   Else: PUT /awards/:id (Update fields)
+           // If No ID:
+           //   POST /awards (Create new)
+           
+           if (award._destroy) {
+             if (award.id) {
+               operations.push(() => del(`/api/v1/portfolio/awards/${award.id}`))
+             }
+             continue
+           }
+           
+           const awardData = {
+             title: award.name,
+             organization: award.issuer,
+             date: award.date,
+             badge_image: award.url,
+             description: award.description,
+             translations: {} as any
+           }
+           
+           // If we are in 'ko' tab, these fields should go to translations.ko
+           // But `award.name` is bound to `v-model="award.name"`.
+           // If I created it in 'ko' tab, `award.name` holds the Korean name.
+           // The base columns (title, organization) should probably be populated too or allowed to be empty?
+           // Backend `Award` model has `translatable_fields :title...`. 
+           // If I send `title` param, it sets the DB column.
+           // If I send `translations: { ko: { title: ... } }`, it sets translation.
+           
+           // Logic correction:
+           // When creating in 'ko' tab, we want to set `translations.ko`.
+           // But we also need a 'base' record. 
+           // Let's assume input in specific language tab targets that language.
+           
+           if (lang === 'en') {
+             // Treat as base
+             // No translations param needed for EN (base)
+           } else {
+             // It's a localized award entry
+             awardData.translations[lang] = {
+               title: award.name,
+               organization: award.issuer,
+               description: award.description
+             }
+             // We should also set base title/org to something? Or leave empty?
+             // Rails model might enforce presence of base title?
+             // `translatable.rb` doesn't enforce base presence usually, but `Award` model might.
+             // `Award` has `translatable_fields`. 
+             // If I create with ONLY ko translation, `title` column is null.
+             // Is that allowed? `create_table "awards"` has `title`, `organization`. No `null: false`.
+             // So it's fine.
+           }
+           
+           if (award.id) {
+             operations.push(() => put(`/api/v1/portfolio/awards/${award.id}`, awardData))
+           } else {
+             operations.push(() => post('/api/v1/portfolio/awards', awardData))
+           }
+        }
+      }
+    }
+    
+    processAwardsList(form.awards.en, 'en')
+    processAwardsList(form.awards.ko, 'ko')
+    processAwardsList(form.awards.ja, 'ja')
+    
+    // Execute all award operations
+    await Promise.all(operations.map(op => op()))
+    
     successMessage.value = i18n[activeLang.value].savedSuccess
     await loadProfile()
   } catch (e: unknown) {
@@ -902,6 +962,7 @@ const addAward = (lang: 'en' | 'ko' | 'ja') => {
 
 const removeAward = (lang: 'en' | 'ko' | 'ja', index: number) => {
   const award = form.awards[lang][index]
+  if (!award) return
   if (award.id) {
     award._destroy = true
   } else {

@@ -45,17 +45,22 @@ export const useApi = () => {
   ): Promise<T> => {
     const { method = 'GET', body, headers = {}, auth = true, localized = false } = options
 
+    const isFormData = body instanceof FormData
+
     const fetchOptions: any = {
       method,
       headers: {
-        'Content-Type': 'application/json',
         ...headers,
         ...(auth ? getAuthHeaders() : {})
       }
     }
 
+    if (!isFormData) {
+      fetchOptions.headers['Content-Type'] = 'application/json'
+    }
+
     if (body && method !== 'GET') {
-      fetchOptions.body = JSON.stringify(body)
+      fetchOptions.body = isFormData ? body : JSON.stringify(body)
     }
 
     const finalEndpoint = getLocalizedEndpoint(endpoint, localized)

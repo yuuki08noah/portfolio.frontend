@@ -1,7 +1,7 @@
 <template>
   <aside class="sidebar-right">
     <div class="sidebar-widget">
-      <h3 class="widget-title">Popular</h3>
+      <h3 class="widget-title">Projects</h3>
       <!-- Loading Skeleton -->
       <ul v-if="loading" class="trending-list">
         <li v-for="i in 3" :key="i">

@@ -3,7 +3,12 @@ export type Locale = 'en' | 'ko' | 'ja'
 export const useI18n = () => {
     const locale = useState<Locale>('locale', () => {
         if (import.meta.client) {
-            return (localStorage.getItem('locale') as Locale) || 'en'
+            const saved = localStorage.getItem('locale') as Locale
+            if (saved) return saved
+
+            const browserLang = navigator.language.toLowerCase()
+            if (browserLang.includes('ko')) return 'ko'
+            if (browserLang.includes('ja')) return 'ja'
         }
         return 'en'
     })

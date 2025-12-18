@@ -47,3 +47,5 @@ jobs:
           service: ${{ env.SERVICE }}
           region: ${{ env.REGION }}
           image: ${{ env.IMAGE }}:${{ github.sha }}
+          env_vars: |
+            NUXT_PUBLIC_BACKEND_API_BASE=https://yuuki08noah.com

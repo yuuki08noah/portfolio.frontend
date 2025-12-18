@@ -530,6 +530,10 @@ const handleSubmit = async () => {
     submitting.value = false
   }
 }
+
+onMounted(() => {
+  loadProject()
+})
 </script>
 
 <style scoped>

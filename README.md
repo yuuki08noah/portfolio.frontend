@@ -1,80 +1,132 @@
-# Portfolio Frontend (Nuxt 3)
+# Portfolio (Frontend)
 
-개인 포트폴리오 및 블로그 CMS의 프론트엔드 프로젝트입니다.
-Nuxt 3와 TypeScript를 기반으로 구축되었으며, SEO 최적화와 사용자 경험(UX) 향상에 중점을 두었습니다.
+> **배포 URL**: <https://portfolio-yuuki08noah-447543468752.asia-northeast3.run.app> (예시)
+> **테스트 계정**: ID: `admin@example.com` / PW: (App log 확인 필요)
 
-## 🚀 진단 및 개선 목표
+## 📌 프로젝트 소개
 
-### 1. 나만의 차별화된 플랫폼 구축
+나만의 아이덴티티를 온전히 담아내기 위해 기획부터 배포까지 직접 수행한 풀스택 포트폴리오 프로젝트의 프론트엔드입니다. Nuxt 3의 최신 기능을 활용하여 SEO 최적화와 사용자 경험을 극대화했습니다.
 
-시중에는 이미 훌륭한 블로그 서비스(Velog, Tistory 등)가 많습니다. 하지만 이러한 기성 플랫폼은 제공되는 템플릿의 한계로 인해 개발자로서의 고유한 개성을 드러내기에는 부족함이 있었습니다.
-따라서, 단순히 글을 적재하는 공간을 넘어 내 기술적 역량과 아이덴티티를 온전히 담아낼 수 있는 커스텀 포트폴리오 사이트를 직접 구축하게 되었습니다.
-
-### 2. 복잡한 비즈니스 로직과 상태 관리
-
-페이지 컴포넌트 내에 API 호출, 데이터 가공, UI 로직이 혼재되어 있어 유지보수가 어렵고 테스트가 힘들었습니다.
-이를 개선하기 위해 Vue 3 Composition API (Composables) 패턴을 도입하여 비즈니스 로직(useProjects, useAuth 등)을 UI와 분리했습니다. 이를 통해 코드 재사용성을 높이고 컴포넌트를 순수하게 뷰(View) 역할에 집중시켰습니다.
+- **개발 기간**: 2024.11.20 ~ 2024.12.18
+- **개발 인원**: 1인 (개인 프로젝트)
 
 ---
 
-## 💡 적용 기술 심화 설명: Notion-like Block Editor
+## 🔍 개선 사항
 
-사용자 경험(UX)을 극대화하기 위해 Notion 스타일의 블록 기반 위지윅(WYSIWYG) 에디터를 직접 구현했습니다.
+### 기존 코드의 문제점
 
-### 1. 블록 기반 데이터 구조의 설계와 이점
+| 문제점 | 개선 방법 |
+|--------|----------|
+| 정적 사이트의 업데이트 비효율성 | Admin CMS 구축을 통한 콘텐츠 관리 자동화 |
+| 비즈니스 로직과 UI 코드의 결합 | Composition API (Composables) 패턴 적용 |
 
-일반적인 에디터가 전체 콘텐츠를 하나의 HTML 문자열로 관리하는 것과 달리, 각 문단을 독립적인 Block 객체({ id, type, content, props })로 관리하는 구조를 채택했습니다.
-Vue의 Reactivity System을 활용하여 블록의 상태 변화를 감지하고, Virtual DOM이 변경된 블록만 효율적으로 리렌더링하도록 설계했습니다. 이 구조 덕분에 블록 단위의 드래그 앤 드롭(DnD)으로 순서를 변경하거나, 멀티컬럼 레이아웃을 구성하는 등 복잡한 UI 인터랙션을 자연스럽게 구현할 수 있었습니다.
+### 개선 결과
 
-### 2. 실시간 Markdown 파싱 및 UX 최적화
+**[개선 1: 컴포지션 API 활용]**
 
-Slash Menu(/ 입력 시 메뉴 팝업) 기능을 구현하여 마우스 없이 키보드만으로 빠른 작성이 가능하도록 했습니다.
-또한 에디터 내에서 ## 입력 시 자동으로 Header 블록으로 변환되는 등 실시간 입력 패턴 매칭 로직을 구현했습니다. 이를 위해 input 이벤트 핸들러에서 정규식으로 마크다운 문법을 감지하고, 즉시 해당 블록 타입으로 교체하는 방식을 사용하여 끊김 없는 작성 경험을 제공했습니다.
+- **개선 전**: 컴포넌트 내에 API 호출 로직이 혼재되어 재사용 불가 및 테스트 난해
+- **개선 후**: `useProjects`, `useAuth` 등 도메인별 Composable로 로직을 분리하여 UI는 뷰 역할만 담당
 
 ---
 
-## 📡 API 명세 요약
+## ✨ 주요 기능
 
-Frontend는 Backend API와 RESTful 방식으로 통신합니다.
+### 1. 사용자 인증
 
-| Domain | Endpoint Base | Description |
+- JWT 기반 로그인 (백엔드 연동)
+- 미들웨어를 통한 권한 제어 (Admin 전용 페이지)
+
+### 2. 커스텀 블록 에디터
+
+- Notion 스타일의 블록 기반 위지윅 에디터 직접 구현
+- [선택한 심화 기술: Slash Command & Markdown Parsing]
+
+### 3. 프로젝트 및 블로그
+
+- 카테고리별 필터링 및 상세 조회
+- 서버 사이드 렌더링(SSR)을 통한 SEO 최적화
+
+---
+
+## 🛠️ 기술 스택
+
+### Frontend
+
+- Nuxt 4.2.1
+- Vue 3.5.24
+- TypeScript
+- Marked (Markdown Parser)
+
+### Deployment
+
+- GCP Cloud Run
+- Google Container Registry
+
+---
+
+## 📂 프로젝트 구조
+
+```
+frontend/
+├── components/
+│   ├── admin/      # 관리자용 컴포넌트 (Editor 등)
+│   ├── blog/       # 블로그 관련 컴포넌트
+│   ├── common/     # 공통 UI 컴포넌트
+│   └── layout/     # 레이아웃 컴포넌트
+├── composables/    # 비즈니스 로직 (useAuth, useFetch 등)
+├── pages/          # 라우트 페이지
+├── public/         # 정적 에셋
+└── nuxt.config.ts
+```
+
+---
+
+## 🔗 API 명세
+
+Frontend는 Backend API를 소비하는 클라이언트입니다. 상세 명세는 Backend README를 참고해 주세요.
+
+| Method | Endpoint Base | Description |
 |--------|---------------|-------------|
-| Auth | /api/v1/auth | 로그인, 로그아웃, 세션 검증 |
-| Projects | /api/v1/portfolio/projects | 포트폴리오 프로젝트 목록 및 상세 조회 |
-| Blog | /api/v1/blog/posts | 기술 블로그 포스트 및 태그 관리 |
-| Reading | /api/v1/reading | 읽은 책 목록 및 통계 데이터 |
-| Travel | /api/v1/travel | 여행 기록 및 지도 데이터 |
-| Uploads | /api/v1/uploads | 이미지 업로드 (GCS 연동) |
+| POST | `/api/v1/auth/*` | 인증 관련 |
+| GET | `/api/v1/projects` | 프로젝트 조회 |
+| GET | `/api/v1/posts` | 블로그 조회 |
 
 ---
 
-## 🏃 로컬 실행 방법
+## 💻 로컬 실행 방법
 
-### 1. 사전 요구 사항
-
-- Node.js (v18+)
-- Backend API 서버 실행 중 (<http://localhost:3000>)
-
-### 2. 프로젝트 클론 및 설치
+### 1. 레포지토리 클론
 
 ```bash
 git clone https://github.com/yuuki08noah/portfolio.frontend.git
 cd portfolio.frontend
+```
+
+### 2. 패키지 설치 및 환경 설정
+
+```bash
 npm install
+
+# .env 파일 생성 및 설정
+# NUXT_PUBLIC_BACKEND_API_BASE=http://localhost:3000
 ```
 
-### 3. 환경 변수 설정
-
-.env 파일을 루트에 생성하고 다음 내용을 추가하세요.
-
-```ini
-NUXT_PUBLIC_BACKEND_API_BASE=http://localhost:3000
-```
-
-### 4. 실행
+### 3. 실행
 
 ```bash
 npm run dev
 ```
 
-브라우저에서 <http://localhost:3000으로> 접속하여 확인합니다.
+---
+
+## 🎥 시연 영상
+
+[YouTube 링크](https://youtu.be/9HfOZwA1XUI)
+
+---
+
+## 📚 참고 자료
+
+- [Nuxt 3 Documentation](https://nuxt.com/docs)
+- [Vue 3 Documentation](https://vuejs.org/)

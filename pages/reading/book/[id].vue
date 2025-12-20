@@ -1,6 +1,11 @@
 <template>
   <section class="book-detail-page container">
     <BookDetail v-if="book" :book="book" />
+    <div v-else-if="error" class="error-state">
+      <h3>Failed to load book</h3>
+      <p>{{ error.message }}</p>
+      <pre>{{ error }}</pre>
+    </div>
     <p v-else class="empty">Loading book...</p>
 
     <div v-if="book" class="card notes-card">
@@ -25,7 +30,7 @@ const route = useRoute()
 const { fetchBook } = useReading()
 
 const id = route.params.id as string
-const { data: book } = await useAsyncData(`book-${id}`, () =>
+const { data: book, error } = await useAsyncData(`book-${id}`, () =>
   fetchBook(id).then((res) => res.data)
 )
 
